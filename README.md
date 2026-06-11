@@ -2,7 +2,7 @@
 
 Ein interaktiver Entscheidungsbaum zur Auswahl des passenden statistischen Verfahrens in der quantitativen psychologischen Forschung.
 
-**➡️ App direkt im Browser nutzen:** https://USERNAME.github.io/methoden-navigator/
+**➡️ App direkt im Browser nutzen:** https://daniel-dorji-gratzer.github.io/methoden-navigator/
 
 ## Was macht die App?
 
