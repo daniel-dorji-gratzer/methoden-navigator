@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Methoden-Navigator · Entscheidungsbaum</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spline+Sans+Mono:wght@400;500;600&family=Spline+Sans:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg:#0e1a24;
+    --bg2:#142634;
+    --panel:#16293a;
+    --panel-edge:#21425a;
+    --ink:#eaf4f9;
+    --ink-soft:#9fbccf;
+    --ink-faint:#6a8aa0;
+    --teal:#2dd4bf;
+    --amber:#f5b945;
+    --rose:#e8627a;
+    --green:#7bc96f;
+    --blue:#5aa9e6;
+    --shadow:0 18px 50px -20px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Spline Sans',sans-serif;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(90,169,230,.10) 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(45,212,191,.08) 0%, transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    padding:32px 20px 80px;
+    line-height:1.55;
+  }
+  .wrap{max-width:760px;margin:0 auto;transition:max-width .3s}
+
+  /* ===== Maps-artiges Canvas-Layout (Desktop) ===== */
+  .canvasArea{margin-top:20px}
+  .mapControls,.mapLegendFloat{display:none}
+
+  @media (min-width:1080px){
+    /* Vollbild: kein umgebender Rand mehr */
+    body{padding:0}
+    .wrap{
+      max-width:none;margin:0;
+      height:100vh;display:flex;flex-direction:column;
+      padding:22px 22px 0;
+    }
+    .canvasArea{
+      position:relative;
+      flex:1 1 auto;min-height:0;margin-top:18px;margin-bottom:0;
+      transition:margin .45s ease;
+      border:1px solid var(--panel-edge);
+      border-radius:18px 18px 0 0;        /* unten bündig zum Bildschirmrand */
+      border-bottom:0;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 1px 1px, rgba(159,188,207,.10) 1px, transparent 0) 0 0/26px 26px,
+        linear-gradient(180deg,var(--bg2),var(--bg));
+      box-shadow:var(--shadow);
+    }
+    /* nach dem Start: Header weg → Karte rückt ganz nach oben, füllt den Viewport */
+    .wrap.started{padding-top:0}
+    .wrap.started .canvasArea{margin-top:0;border-radius:0}
+    footer{display:none}
+    /* scroll-/zoombarer Baum-Canvas */
+    .mapStage{
+      position:absolute;inset:0;overflow:auto;cursor:grab;
+      scrollbar-width:thin;
+    }
+    .mapStage.grabbing{cursor:grabbing}
+    .mapStage::-webkit-scrollbar{width:10px;height:10px}
+    .mapStage::-webkit-scrollbar-thumb{background:var(--panel-edge);border-radius:6px}
+    .mapPan{
+      transform-origin:0 0;transition:transform .15s ease;
+      /* Polster links überbrückt das Overlay-Panel, sonst bleibt die Wurzel verdeckt */
+      padding:24px 60px 40px 460px;
+      box-sizing:content-box;
+    }
+    .mapPan .map-svg{display:block}
+
+    /* schwebendes Overlay-Panel (links, wie Maps-Suchpanel) */
+    .panel{
+      position:absolute;top:18px;left:18px;width:400px;max-width:42%;
+      max-height:calc(100% - 36px);
+      background:rgba(18,38,52,.86);
+      backdrop-filter:blur(14px) saturate(1.2);
+      -webkit-backdrop-filter:blur(14px) saturate(1.2);
+      border:1px solid rgba(33,66,90,.9);border-radius:16px;
+      box-shadow:0 24px 60px -22px rgba(0,0,0,.85);
+      display:flex;flex-direction:column;z-index:5;
+    }
+    .panel-scroll{overflow-y:auto;padding:18px;scrollbar-width:thin}
+    .panel-scroll::-webkit-scrollbar{width:8px}
+    .panel-scroll::-webkit-scrollbar-thumb{background:var(--panel-edge);border-radius:5px}
+    /* Karte/Panel-spezifische Karten-Optik abschwächen (schon im Glas) */
+    .panel .card{box-shadow:none;background:transparent;border-color:transparent;padding:0}
+    .panel .glossary{justify-content:flex-start;margin-top:16px}
+
+    /* schwebende Steuerung unten rechts */
+    .mapControls{
+      display:flex;flex-direction:column;gap:6px;
+      position:absolute;right:16px;bottom:16px;z-index:6;
+    }
+    .mapctl{
+      width:38px;height:38px;border-radius:10px;cursor:pointer;
+      background:rgba(18,38,52,.9);border:1px solid var(--panel-edge);
+      color:var(--ink);font-size:1.25rem;font-family:inherit;line-height:1;
+      backdrop-filter:blur(8px);transition:.15s;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .mapctl:hover{border-color:var(--teal);color:var(--teal)}
+    .mapctl:active{transform:scale(.94)}
+    /* schwebende Legende oben rechts */
+    .mapLegendFloat{
+      display:flex;gap:14px;flex-wrap:wrap;
+      position:absolute;right:16px;top:16px;z-index:6;
+      background:rgba(18,38,52,.82);backdrop-filter:blur(8px);
+      border:1px solid var(--panel-edge);border-radius:10px;padding:8px 12px;
+      font-family:'Spline Sans Mono',monospace;font-size:.7rem;color:var(--ink-faint);
+    }
+    .mapLegendFloat i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:middle}
+  }
+
+  header{margin-bottom:26px}
+  .kicker{
+    font-family:'Spline Sans Mono',monospace;
+    font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--teal);margin-bottom:10px;
+  }
+  h1{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:clamp(2rem,6vw,3rem);line-height:1.02;
+    letter-spacing:-.02em;
+  }
+  h1 em{font-style:italic;color:var(--amber)}
+  .sub{color:var(--ink-soft);margin-top:12px;max-width:54ch;font-size:.96rem}
+
+  /* mode switch */
+  .modes{display:flex;gap:8px;margin:24px 0 20px}
+  .mode-btn{
+    flex:1;padding:11px 8px;border:1px solid var(--panel-edge);
+    background:var(--panel);color:var(--ink-soft);border-radius:12px;
+    font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;
+    transition:.18s;
+  }
+  .mode-btn:hover{border-color:var(--teal);color:var(--ink)}
+  .mode-btn.active{
+    background:linear-gradient(180deg,#1c3a4f,#16293a);
+    border-color:var(--teal);color:var(--teal);
+    box-shadow:inset 0 0 0 1px rgba(45,212,191,.3);
+  }
+
+  /* breadcrumb path */
+  .path{
+    display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+    margin-bottom:20px;min-height:30px;
+  }
+  .crumb{
+    font-family:'Spline Sans Mono',monospace;font-size:.74rem;
+    background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.3);
+    color:var(--teal);padding:4px 9px;border-radius:7px;
+    animation:pop .3s ease;
+  }
+  .crumb.choice{
+    background:rgba(245,185,69,.12);border-color:rgba(245,185,69,.35);
+    color:var(--amber);
+  }
+  .crumb-sep{color:var(--ink-faint);font-size:.7rem}
+  @keyframes pop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+  /* node card */
+  .card{
+    background:linear-gradient(180deg,var(--panel),var(--bg2));
+    border:1px solid var(--panel-edge);border-radius:18px;
+    padding:28px 26px;box-shadow:var(--shadow);
+    animation:slide .35s cubic-bezier(.2,.7,.3,1);
+  }
+  @keyframes slide{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .node-tag{
+    font-family:'Spline Sans Mono',monospace;font-size:.7rem;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);
+    margin-bottom:10px;
+  }
+  .question{
+    font-family:'Fraunces',serif;font-size:1.5rem;font-weight:500;
+    line-height:1.2;margin-bottom:6px;letter-spacing:-.01em;
+  }
+  .hint{color:var(--ink-soft);font-size:.9rem;margin-bottom:20px}
+
+  .options{display:flex;flex-direction:column;gap:10px}
+  .opt{
+    text-align:left;width:100%;
+    background:var(--bg2);border:1px solid var(--panel-edge);
+    border-radius:12px;padding:14px 16px;color:var(--ink);
+    font-family:inherit;font-size:.98rem;font-weight:500;cursor:pointer;
+    transition:.16s;display:flex;align-items:center;gap:12px;
+  }
+  .opt:hover{
+    border-color:var(--teal);background:#1a3245;transform:translateX(3px);
+  }
+  .opt .arrow{margin-left:auto;color:var(--ink-faint);transition:.16s}
+  .opt:hover .arrow{color:var(--teal);transform:translateX(2px)}
+  .opt .dot{
+    width:9px;height:9px;border-radius:50%;background:var(--blue);
+    flex-shrink:0;box-shadow:0 0 0 3px rgba(90,169,230,.18);
+  }
+
+  /* result */
+  .result .question{color:var(--green)}
+  .test-name{
+    font-family:'Fraunces',serif;font-size:2.1rem;font-weight:600;
+    color:var(--green);line-height:1.1;margin:4px 0 14px;letter-spacing:-.02em;
+  }
+  .test-name.warn{color:var(--amber)}
+  .why{
+    background:rgba(123,201,111,.08);border-left:3px solid var(--green);
+    padding:14px 16px;border-radius:0 10px 10px 0;margin-bottom:16px;
+    font-size:.93rem;color:var(--ink);
+  }
+  .why.warn{background:rgba(245,185,69,.08);border-left-color:var(--amber)}
+  .why b{color:var(--green)}
+  .why.warn b{color:var(--amber)}
+  .howbox{
+    background:rgba(90,169,230,.06);border:1px solid rgba(90,169,230,.22);
+    border-radius:12px;padding:15px 17px;margin-bottom:16px;
+  }
+  .howbox-h{
+    font-family:'Spline Sans Mono',monospace;font-size:.72rem;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--blue);
+    margin-bottom:9px;
+  }
+  .howbox p{font-size:.92rem;color:var(--ink);line-height:1.62}
+  .howbox b{color:var(--blue);font-weight:600}
+  .selfcheck{
+    font-family:'Spline Sans Mono',monospace;font-size:.82rem;
+    color:var(--ink-soft);background:rgba(90,169,230,.08);
+    border:1px dashed rgba(90,169,230,.3);border-radius:10px;
+    padding:12px 14px;margin-bottom:18px;
+  }
+  .selfcheck b{color:var(--blue)}
+
+  .actions{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{
+    font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;
+    padding:11px 18px;border-radius:11px;border:1px solid var(--panel-edge);
+    background:var(--panel);color:var(--ink-soft);transition:.16s;
+  }
+  .btn:hover{border-color:var(--teal);color:var(--ink)}
+  .btn.primary{
+    background:var(--teal);color:#06231f;border-color:var(--teal);
+  }
+  .btn.primary:hover{background:#3fe6d0;color:#06231f}
+  .btn.ghost{background:transparent}
+
+  /* back link inline */
+  .backline{
+    margin-top:16px;font-size:.84rem;color:var(--ink-faint);cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .backline:hover{color:var(--teal)}
+
+  /* ===== Mobile / schmale Screens: alles untereinander ===== */
+  .mapStage{margin-top:4px}
+  .mapPan{transform-origin:0 0}
+  @media (max-width:1079px){
+    .panel .panel-scroll{padding:0}
+    .panel .card{margin-bottom:4px}
+    .mapStage{
+      overflow-x:auto;border:1px solid var(--panel-edge);border-radius:16px;
+      background:linear-gradient(180deg,var(--panel),var(--bg2));
+      padding:10px 4px;margin-top:18px;
+    }
+    .map-svg{display:block}
+    .mapLegendFloat{
+      display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;
+      font-family:'Spline Sans Mono',monospace;font-size:.72rem;color:var(--ink-faint);
+    }
+    .mapLegendFloat i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+    .glossary{margin-top:16px}
+  }
+  .map-svg{display:block}
+  .lg-active{background:var(--teal)}
+  .lg-result{background:var(--green)}
+  .lg-dim{background:var(--panel-edge)}
+
+  /* svg node states */
+  .mn rect, .mn circle, .mn polygon{transition:.3s}
+  .mn text{font-family:'Spline Sans Mono',monospace;fill:var(--ink-faint);transition:.3s}
+  .mn.dim rect,.mn.dim polygon{fill:var(--bg);stroke:var(--panel-edge)}
+  .mn.dim text{fill:var(--ink-faint);opacity:.55}
+  .mn.active rect,.mn.active polygon{fill:rgba(45,212,191,.16);stroke:var(--teal)}
+  .mn.active text{fill:var(--teal);opacity:1}
+  .mn.current rect,.mn.current polygon{fill:rgba(245,185,69,.20);stroke:var(--amber)}
+  .mn.current text{fill:var(--amber);opacity:1}
+  .mn.result rect{fill:rgba(123,201,111,.16);stroke:var(--green)}
+  .mn.result text{fill:var(--green);opacity:1}
+  .medge{stroke:var(--panel-edge);stroke-width:1.4;fill:none;transition:.3s}
+  .medge.lit{stroke:var(--teal);stroke-width:2.2}
+
+  .medge-lbl rect{fill:var(--bg2);stroke:var(--panel-edge);stroke-width:1;opacity:.92;transition:.3s}
+  .medge-lbl text{font-family:'Spline Sans Mono',monospace;fill:var(--ink-faint);transition:.3s}
+  .medge-lbl.lit rect{fill:rgba(45,212,191,.16);stroke:var(--teal)}
+  .medge-lbl.lit text{fill:var(--teal)}
+
+  footer{
+    margin-top:30px;text-align:center;font-size:.78rem;color:var(--ink-faint);
+    font-family:'Spline Sans Mono',monospace;
+  }
+  .glossary{
+    margin-top:18px;font-size:.82rem;color:var(--ink-faint);
+    display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;
+  }
+  .glossary span b{color:var(--ink-soft)}
+  .panel-source{
+    margin-top:14px;font-family:'Spline Sans Mono',monospace;
+    font-size:.68rem;color:var(--ink-faint);opacity:.7;line-height:1.4;
+  }
+
+  /* ===== Onboarding-Kollaps: großer Header weicht Panel-Kopfzeile ===== */
+  #bigHeader, #bigModes{
+    transition:opacity .4s ease, max-height .45s ease, margin .45s ease, transform .4s ease;
+    overflow:hidden;
+  }
+  .wrap.started #bigHeader,
+  .wrap.started #bigModes{
+    opacity:0;max-height:0;margin:0;transform:translateY(-8px);
+    pointer-events:none;
+  }
+  .wrap.started #bigModes{padding:0;border:0}
+
+  /* Panel-Kopfzeile: erst sichtbar, wenn gestartet */
+  .panel-head{
+    max-height:0;opacity:0;overflow:hidden;
+    transition:max-height .45s ease, opacity .4s ease, margin .45s ease;
+    margin-bottom:0;
+  }
+  .wrap.started .panel-head{
+    max-height:200px;opacity:1;margin-bottom:14px;
+  }
+  .panel-title{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+  .pt-name{
+    font-family:'Fraunces',serif;font-size:1.18rem;font-weight:600;
+    letter-spacing:-.01em;color:var(--ink);
+  }
+  .pt-name em{font-style:italic;color:var(--amber)}
+  .pt-info{
+    margin-left:auto;width:24px;height:24px;border-radius:50%;cursor:pointer;
+    background:transparent;border:1px solid var(--panel-edge);color:var(--ink-soft);
+    font-family:'Spline Sans Mono',monospace;font-size:.8rem;line-height:1;
+    transition:.15s;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .pt-info:hover{border-color:var(--teal);color:var(--teal)}
+  .pt-info.on{background:rgba(45,212,191,.14);border-color:var(--teal);color:var(--teal)}
+
+  /* Segmented-Toggle */
+  .seg{
+    display:flex;gap:3px;padding:3px;border-radius:11px;
+    background:var(--bg);border:1px solid var(--panel-edge);
+  }
+  .seg-btn{
+    flex:1;padding:8px 4px;border-radius:8px;cursor:pointer;
+    background:transparent;border:0;color:var(--ink-soft);
+    font-family:inherit;font-size:.78rem;font-weight:600;transition:.16s;
+    white-space:nowrap;
+  }
+  .seg-btn:hover{color:var(--ink)}
+  .seg-btn.active{
+    background:linear-gradient(180deg,#1c3a4f,#16293a);color:var(--teal);
+    box-shadow:inset 0 0 0 1px rgba(45,212,191,.3);
+  }
+  .panel-desc{
+    max-height:0;opacity:0;overflow:hidden;margin:0;
+    font-size:.86rem;color:var(--ink-soft);line-height:1.5;
+    transition:max-height .35s ease, opacity .3s ease, margin .35s ease;
+  }
+  .panel-desc.show{max-height:120px;opacity:1;margin-top:11px}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <header id="bigHeader">
+    <div class="kicker">Forschungsmethoden · Testauswahl</div>
+    <h1>Methoden-<em>Navigator</em></h1>
+    <p class="sub">Beantworte die Fragen Schritt für Schritt. Der Pfad baut sich mit – am Ziel steht das passende Verfahren samt Begründung. Kein Auswendiglernen, sondern Entscheiden.</p>
+  </header>
+
+  <div class="modes" id="bigModes">
+    <button class="mode-btn active" data-root="unterschied">Unterschiedshypothesen</button>
+    <button class="mode-btn" data-root="zusammenhang">Zusammenhangshypothesen</button>
+    <button class="mode-btn" data-root="moderation">Moderationshypothesen</button>
+  </div>
+
+  <div class="canvasArea" id="canvasArea">
+    <!-- Baum als scroll-/zoombare Karte -->
+    <div class="mapStage" id="mapStage">
+      <div class="mapPan" id="mapPan"><div id="mapHost"></div></div>
+    </div>
+
+    <!-- Kartensteuerung (Maps-artig) -->
+    <div class="mapControls">
+      <button class="mapctl" id="zoomIn" title="Vergrößern">+</button>
+      <button class="mapctl" id="zoomOut" title="Verkleinern">−</button>
+      <button class="mapctl" id="zoomFit" title="Auf Pfad zentrieren">⊹</button>
+    </div>
+    <div class="mapLegendFloat">
+      <span><i class="lg-active"></i>dein Pfad</span>
+      <span><i class="lg-result"></i>Ziel</span>
+      <span><i class="lg-dim"></i>übrige Äste</span>
+    </div>
+
+    <!-- schwebendes Frage-/Ergebnis-Panel -->
+    <div class="panel" id="panel">
+      <div class="panel-scroll">
+        <!-- kompakte Kopfzeile (nur sichtbar, sobald gestartet) -->
+        <div class="panel-head" id="panelHead">
+          <div class="panel-title">
+            <span class="pt-name">Methoden-<em>Navigator</em></span>
+            <button class="pt-info" id="infoBtn" title="Worum geht's?">?</button>
+          </div>
+          <div class="seg" id="seg">
+            <button class="seg-btn active" data-root="unterschied">Unterschied</button>
+            <button class="seg-btn" data-root="zusammenhang">Zusammenhang</button>
+            <button class="seg-btn" data-root="moderation">Moderation</button>
+          </div>
+          <p class="panel-desc" id="panelDesc">Beantworte die Fragen Schritt für Schritt. Der Pfad baut sich mit – am Ziel steht das passende Verfahren samt Begründung.</p>
+        </div>
+        <div class="path" id="path"></div>
+        <div id="stage"></div>
+        <div class="glossary">
+          <span><b>ZSF</b> = unabh. Stichproben</span>
+          <span><b>ISF</b> = abh. Stichproben</span>
+          <span><b>AV</b> = abh. Variable</span>
+          <span><b>UV</b> = unabh. Variable</span>
+          <span><b>NV</b> = Normalverteilung</span>
+        </div>
+        <div class="panel-source">Daten nach dem Entscheidungsbaum · Forschungsmethoden WS25, WEBER</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Daten nach dem Entscheidungsbaum (Forschungsmethoden WS25, WEBER)</footer>
+</div>
+
+<script>
+/* ============================================================
+   Entscheidungsbaum als Datenstruktur.
+   q  = Frage am Knoten      hint = Erläuterung
+   opts = [{label, go}]      go verweist auf nächste Knoten-ID
+   Endknoten: {result:"Testname", why:"Begründung", check:"Self-Check", warn:bool}
+   ============================================================ */
+
+const TREES = {
+  unterschied: {
+    start: "u_design",
+    nodes: {
+      u_design: {
+        tag:"Studiendesign",
+        q:"Wie hängen deine Stichproben zusammen?",
+        hint:"Werden verschiedene Personen/Gruppen verglichen (unabhängig) oder dieselben Personen mehrfach gemessen (abhängig)?",
+        opts:[
+          {label:"Unabhängige Stichproben (ZSF)", crumb:"ZSF", go:"u_zsf_stufen"},
+          {label:"Abhängige Stichproben (ISF)", crumb:"ISF", go:"u_isf_stufen"}
+        ]
+      },
+      /* ---------- ZSF ---------- */
+      u_zsf_stufen:{
+        tag:"Anzahl Stufen",
+        q:"Wie viele Gruppen / Stufen vergleichst du?",
+        hint:"Zwei Bedingungen oder mehr als zwei?",
+        opts:[
+          {label:"2 Stufen", crumb:"2 Stufen", go:"u_zsf2_av"},
+          {label:"Mehr als 2 Stufen", crumb:">2 Stufen", go:"u_zsf3_av"}
+        ]
+      },
+      u_zsf2_av:{
+        tag:"Skalenniveau der AV",
+        q:"Welches Skalenniveau hat die abhängige Variable?",
+        hint:"Metrisch, ordinal oder nominal?",
+        opts:[
+          {label:"Metrisch", crumb:"AV metrisch", go:"u_zsf2_nv"},
+          {label:"Ordinal", crumb:"AV ordinal", go:"r_mwu"},
+          {label:"Nominal", crumb:"AV nominal", go:"r_kreuz"}
+        ]
+      },
+      u_zsf2_nv:{
+        tag:"Voraussetzung",
+        q:"Sind die Daten pro Gruppe normalverteilt?",
+        hint:"NV pro Gruppe – relevant für parametrische Verfahren.",
+        opts:[
+          {label:"Ja, normalverteilt", crumb:"NV: ja", go:"u_zsf2_var"},
+          {label:"Nein", crumb:"NV: nein", go:"r_mwu"}
+        ]
+      },
+      u_zsf2_var:{
+        tag:"Voraussetzung",
+        q:"Sind die Varianzen homogen?",
+        hint:"Homogene Varianzen entscheiden zwischen klassischem t-Test und Welch.",
+        opts:[
+          {label:"Ja, homogen", crumb:"Varianzen homogen", go:"r_ttest_zsf"},
+          {label:"Nein", crumb:"Varianzen heterogen", go:"r_welch"}
+        ]
+      },
+      u_zsf3_av:{
+        tag:"Skalenniveau der AV",
+        q:"Welches Skalenniveau hat die abhängige Variable?",
+        hint:"Bei mehr als zwei Gruppen.",
+        opts:[
+          {label:"Metrisch", crumb:"AV metrisch", go:"u_zsf3_nv"},
+          {label:"Ordinal", crumb:"AV ordinal", go:"u_zsf3_ordnung"},
+          {label:"Nominal", crumb:"AV nominal", go:"r_kreuz"}
+        ]
+      },
+      u_zsf3_nv:{
+        tag:"Voraussetzung",
+        q:"Sind die Daten pro Gruppe normalverteilt?",
+        hint:"NV pro Gruppe.",
+        opts:[
+          {label:"Ja, normalverteilt", crumb:"NV: ja", go:"u_zsf3_var"},
+          {label:"Nein", crumb:"NV: nein", go:"r_kruskal"}
+        ]
+      },
+      u_zsf3_var:{
+        tag:"Voraussetzung",
+        q:"Sind die Varianzen homogen?",
+        hint:"Entscheidet zwischen klassischer ANOVA und Welch + Games-Howell.",
+        opts:[
+          {label:"Ja, homogen", crumb:"Varianzen homogen", go:"r_anova"},
+          {label:"Nein", crumb:"Varianzen heterogen", go:"r_gameshowell"}
+        ]
+      },
+      u_zsf3_ordnung:{
+        tag:"Hypothesenform",
+        q:"Hat deine Hypothese eine geordnete Erwartung über die Gruppen?",
+        hint:"Erwartest du eine bestimmte Reihenfolge (Trend) zwischen den Gruppen?",
+        opts:[
+          {label:"Ja, geordnete Reihenfolge", crumb:"Ordnung: ja", go:"r_jonckheere"},
+          {label:"Nein", crumb:"Ordnung: nein", go:"r_kruskal"}
+        ]
+      },
+      /* ---------- ISF ---------- */
+      u_isf_stufen:{
+        tag:"Anzahl Stufen",
+        q:"Wie viele Messzeitpunkte / Stufen?",
+        hint:"Zwei abhängige Messungen oder mehr?",
+        opts:[
+          {label:"2 Stufen", crumb:"2 Stufen", go:"u_isf2_av"},
+          {label:"Mehr als 2 Stufen", crumb:">2 Stufen", go:"u_isf3_av"}
+        ]
+      },
+      u_isf2_av:{
+        tag:"Skalenniveau der AV",
+        q:"Welches Skalenniveau hat die abhängige Variable?",
+        hint:"Bei zwei abhängigen Messungen.",
+        opts:[
+          {label:"Nominal", crumb:"AV nominal", go:"r_bowker"},
+          {label:"Dichotom", crumb:"AV dichotom", go:"r_mcnemar"},
+          {label:"Ordinal", crumb:"AV ordinal", go:"r_vorzeichen"},
+          {label:"Metrisch", crumb:"AV metrisch", go:"u_isf2_nv"}
+        ]
+      },
+      u_isf2_nv:{
+        tag:"Voraussetzung",
+        q:"Sind die Differenzen normalverteilt?",
+        hint:"NV der Differenzwerte (nicht der Rohwerte) ist hier entscheidend.",
+        opts:[
+          {label:"Ja, normalverteilt", crumb:"NV Diff.: ja", go:"r_ttest_isf"},
+          {label:"Nein", crumb:"NV Diff.: nein", go:"r_wilcoxon"}
+        ]
+      },
+      u_isf3_av:{
+        tag:"Skalenniveau der AV",
+        q:"Welches Skalenniveau hat die abhängige Variable?",
+        hint:"Bei mehr als zwei abhängigen Messungen.",
+        opts:[
+          {label:"Dichotom", crumb:"AV dichotom", go:"r_cochran"},
+          {label:"Ordinal", crumb:"AV ordinal", go:"r_friedman"},
+          {label:"Metrisch", crumb:"AV metrisch", go:"u_isf3_sph"}
+        ]
+      },
+      u_isf3_sph:{
+        tag:"Voraussetzung",
+        q:"Ist die Sphärizität gegeben? (Mauchly-Test)",
+        hint:"Sphärizität ist die zentrale Voraussetzung der ANOVA mit Messwiederholung.",
+        opts:[
+          {label:"Ja, angenommen", crumb:"Sphärizität: ja", go:"r_anova_isf"},
+          {label:"Nein, verletzt", crumb:"Sphärizität: nein", go:"u_isf3_eps"}
+        ]
+      },
+      u_isf3_eps:{
+        tag:"Korrektur",
+        q:"Wie groß ist das Epsilon (Greenhouse-Geisser)?",
+        hint:"ε < 0,75 oder ε ≥ 0,75 bestimmt die geeignete Korrektur.",
+        opts:[
+          {label:"ε < 0,75", crumb:"ε < 0,75", go:"r_gg"},
+          {label:"ε ≥ 0,75", crumb:"ε ≥ 0,75", go:"r_hf"}
+        ]
+      }
+    }
+  },
+
+  zusammenhang: {
+    start: "z_av",
+    nodes: {
+      z_av:{
+        tag:"Skalenniveau der AV",
+        q:"Welches Skalenniveau hat die abhängige Variable?",
+        hint:"Davon hängt der ganze weitere Pfad ab.",
+        opts:[
+          {label:"Metrisch", crumb:"AV metrisch", go:"z_m_uv"},
+          {label:"Ordinal", crumb:"AV ordinal", go:"z_o_uv"},
+          {label:"Dichotom", crumb:"AV dichotom", go:"z_d_uv"},
+          {label:"Nominal", crumb:"AV nominal", go:"z_n_uv"}
+        ]
+      },
+      /* metrisch */
+      z_m_uv:{
+        tag:"Anzahl UVs",
+        q:"Wie viele unabhängige Variablen?",
+        hint:"Eine oder mehrere Prädiktoren?",
+        opts:[
+          {label:"Eine UV", crumb:"1 UV", go:"z_m_uvtyp"},
+          {label:"Zwei oder mehr UVs", crumb:"≥2 UVs", go:"r_mlr"}
+        ]
+      },
+      z_m_uvtyp:{
+        tag:"Skalenniveau der UV",
+        q:"Welches Skalenniveau hat die UV?",
+        hint:"Metrisch, ordinal oder dichotom?",
+        opts:[
+          {label:"Metrisch", crumb:"UV metrisch", go:"z_m_ausreisser"},
+          {label:"Ordinal", crumb:"UV ordinal", go:"r_spearman"},
+          {label:"Dichotom", crumb:"UV dichotom", go:"r_punktbiserial"}
+        ]
+      },
+      z_m_ausreisser:{
+        tag:"Voraussetzung",
+        q:"Gibt es Ausreißer im Streudiagramm?",
+        hint:"Ausreißer verzerren Pearson – dann ist die rangbasierte Alternative robuster.",
+        opts:[
+          {label:"Nein, sauber", crumb:"Ausreißer: nein", go:"r_pearson"},
+          {label:"Ja, Ausreißer vorhanden", crumb:"Ausreißer: ja", go:"r_spearman"}
+        ]
+      },
+      /* ordinal */
+      z_o_uv:{
+        tag:"Anzahl UVs",
+        q:"Wie viele unabhängige Variablen?",
+        hint:"",
+        opts:[
+          {label:"Eine UV", crumb:"1 UV", go:"r_spearman"},
+          {label:"Zwei oder mehr UVs", crumb:"≥2 UVs", go:"r_ordreg"}
+        ]
+      },
+      /* dichotom */
+      z_d_uv:{
+        tag:"Anzahl UVs",
+        q:"Wie viele unabhängige Variablen?",
+        hint:"",
+        opts:[
+          {label:"Eine UV", crumb:"1 UV", go:"z_d_uvtyp"},
+          {label:"Zwei oder mehr UVs", crumb:"≥2 UVs", go:"r_binlog"}
+        ]
+      },
+      z_d_uvtyp:{
+        tag:"Skalenniveau der UV",
+        q:"Welches Skalenniveau hat die UV?",
+        hint:"",
+        opts:[
+          {label:"Dichotom", crumb:"UV dichotom", go:"r_vierfelder"},
+          {label:"Nominal", crumb:"UV nominal", go:"r_kontingenz"},
+          {label:"Metrisch", crumb:"UV metrisch", go:"r_binlog"}
+        ]
+      },
+      /* nominal */
+      z_n_uv:{
+        tag:"Anzahl UVs",
+        q:"Wie viele unabhängige Variablen?",
+        hint:"",
+        opts:[
+          {label:"Eine UV", crumb:"1 UV", go:"z_n_uvtyp"},
+          {label:"Zwei oder mehr UVs", crumb:"≥2 UVs", go:"r_multinom"}
+        ]
+      },
+      z_n_uvtyp:{
+        tag:"Skalenniveau der UV",
+        q:"Welches Skalenniveau hat die UV?",
+        hint:"",
+        opts:[
+          {label:"Dichotom oder nominal", crumb:"UV dichotom/nominal", go:"r_kontingenz"},
+          {label:"Metrisch", crumb:"UV metrisch", go:"r_multinom"}
+        ]
+      }
+    }
+  },
+
+  moderation: {
+    start: "m_av",
+    nodes: {
+      m_av:{
+        tag:"Skalenniveau der AV",
+        q:"Welches Skalenniveau hat die abhängige Variable?",
+        hint:"Bei Moderation wird geprüft, ob ein Moderator den Effekt der UV auf die AV verändert – „ein Effekt auf einen Effekt“. Das AV-Niveau bestimmt die Verfahrensfamilie.",
+        opts:[
+          {label:"Metrisch", crumb:"AV metrisch", go:"m_uv"},
+          {label:"Ordinal / dichotom / nominal", crumb:"AV nicht-metrisch", go:"r_mod_loglin"}
+        ]
+      },
+      m_uv:{
+        tag:"Art der UV",
+        q:"Definiert die unabhängige Variable Gruppen oder ist sie metrisch?",
+        hint:"Erste der beiden Kreuzungsachsen aus den vier Moderationssituationen (T05).",
+        opts:[
+          {label:"UV definiert Gruppen", crumb:"UV kategorial", go:"m_uvkat_mod"},
+          {label:"UV ist metrisch", crumb:"UV metrisch", go:"m_uvmet_mod"}
+        ]
+      },
+      /* UV kategorial */
+      m_uvkat_mod:{
+        tag:"Art des Moderators",
+        q:"Definiert der Moderator Gruppen oder ist er metrisch?",
+        hint:"Zweite Kreuzungsachse.",
+        opts:[
+          {label:"Moderator definiert Gruppen", crumb:"Mod. kategorial", go:"r_mod_anova"},
+          {label:"Moderator ist metrisch", crumb:"Mod. metrisch", go:"r_mod_ancova"}
+        ]
+      },
+      /* UV metrisch */
+      m_uvmet_mod:{
+        tag:"Art des Moderators",
+        q:"Definiert der Moderator Gruppen oder ist er metrisch?",
+        hint:"Zweite Kreuzungsachse.",
+        opts:[
+          {label:"Moderator definiert Gruppen", crumb:"Mod. kategorial", go:"r_mod_groupreg"},
+          {label:"Moderator ist metrisch", crumb:"Mod. metrisch", go:"r_mod_modreg"}
+        ]
+      }
+    }
+  }
+};
+
+/* ---------- Endknoten (Verfahren) ---------- */
+const RESULTS = {
+  // Unterschied ZSF
+  r_ttest_zsf:{name:"t-Test für unabhängige Stichproben",
+    why:"Metrische AV, zwei unabhängige Gruppen, <b>normalverteilt</b> und <b>varianzhomogen</b> – das sind genau die Voraussetzungen des klassischen t-Tests.",
+    check:"Wäre nur die Varianzhomogenität verletzt → Welch. Wäre die NV verletzt → Mann-Whitney-U."},
+  r_welch:{name:"Welch-Test",
+    why:"Metrische, normalverteilte AV bei zwei Gruppen, aber <b>heterogene Varianzen</b> – der Welch-Test korrigiert dafür über angepasste Freiheitsgrade.", warn:true,
+    check:"Bei homogenen Varianzen genügt der gewöhnliche t-Test."},
+  r_mwu:{name:"Mann-Whitney-U-Test",
+    why:"Zwei unabhängige Gruppen mit <b>ordinaler</b> AV oder verletzter Normalverteilung – das nonparametrische Pendant zum t-Test vergleicht Rangsummen.",
+    check:"Frag dich: ist die AV wirklich nur ordinal, oder metrisch-aber-nicht-normalverteilt? Beide Wege führen hierher."},
+  r_kruskal:{name:"Kruskal-Wallis-Test",
+    why:"Mehr als zwei unabhängige Gruppen, AV ordinal oder nicht normalverteilt, <b>ohne</b> geordnete Hypothese – die Rang-Verallgemeinerung des Mann-Whitney-U.",
+    check:"Mit geordneter Erwartung wäre stattdessen Jonckheere-Terpstra die stärkere Wahl."},
+  r_jonckheere:{name:"Jonckheere-Terpstra-Test",
+    why:"Mehr als zwei Gruppen, ordinale AV und eine <b>geordnete</b> Hypothese (erwarteter Trend) – der Test nutzt genau diese Ordnungsinformation und gewinnt dadurch Power.",
+    check:"Ohne Ordnungserwartung verschenkst du diese Power – dann Kruskal-Wallis."},
+  r_anova:{name:"Einfaktorielle ANOVA (+ z. B. Tukey HSD)",
+    why:"Mehr als zwei unabhängige Gruppen, metrische AV, <b>normalverteilt</b> und <b>varianzhomogen</b> – Post-hoc z. B. Tukey HSD für paarweise Vergleiche.",
+    check:"Bei heterogenen Varianzen → Welch-ANOVA mit Games-Howell."},
+  r_gameshowell:{name:"Welch-ANOVA + Games-Howell",
+    why:"Metrische, normalverteilte AV über mehr als zwei Gruppen, aber <b>heterogene Varianzen</b> – Games-Howell ist das varianz-robuste Post-hoc-Verfahren.", warn:true,
+    check:"Bei Varianzhomogenität genügt die klassische ANOVA mit Tukey HSD."},
+  r_kreuz:{name:"Kreuztabelle / χ²-Test",
+    why:"Nominale AV bei unabhängigen Stichproben – Häufigkeiten werden in einer Kreuztabelle gegen die erwarteten Werte (χ²) geprüft.",
+    check:"Erwartete Zellhäufigkeiten beachten – sind sie zu klein, ist χ² nicht zuverlässig."},
+  // Unterschied ISF
+  r_bowker:{name:"Bowker-Test",
+    why:"Zwei abhängige Messungen mit <b>nominaler</b> AV (mehr als zwei Kategorien) – prüft die Symmetrie der Veränderungen.",
+    check:"Bei genau zwei Kategorien (dichotom) → McNemar."},
+  r_mcnemar:{name:"McNemar-Test",
+    why:"Zwei abhängige Messungen mit <b>dichotomer</b> AV – betrachtet nur die Fälle, die sich zwischen den Zeitpunkten verändert haben.",
+    check:"McNemar ist der dichotome Spezialfall von Bowker."},
+  r_vorzeichen:{name:"Vorzeichentest",
+    why:"Zwei abhängige Messungen mit <b>ordinaler</b> AV – nutzt nur die Richtung (Vorzeichen) der Differenzen.",
+    check:"Wilcoxon nutzt zusätzlich die Größe der Differenzen und ist bei metrischen Daten stärker."},
+  r_ttest_isf:{name:"t-Test für abhängige Stichproben",
+    why:"Zwei abhängige Messungen, metrische AV, <b>Differenzen normalverteilt</b> – der gepaarte t-Test arbeitet auf den Differenzwerten.",
+    check:"Wichtig: geprüft wird die NV der Differenzen, nicht der Rohwerte."},
+  r_wilcoxon:{name:"Wilcoxon-Vorzeichen-Rang-Test",
+    why:"Zwei abhängige metrische Messungen, deren <b>Differenzen nicht normalverteilt</b> sind – das nonparametrische Pendant zum gepaarten t-Test.", warn:true,
+    check:"Bei normalverteilten Differenzen → gepaarter t-Test."},
+  r_cochran:{name:"Cochran-Q-Test",
+    why:"Mehr als zwei abhängige Messungen mit <b>dichotomer</b> AV – Verallgemeinerung des McNemar-Tests auf mehrere Zeitpunkte.",
+    check:"Der dichotome Mehr-Zeitpunkt-Fall."},
+  r_friedman:{name:"Friedman-Test",
+    why:"Mehr als zwei abhängige Messungen mit <b>ordinaler</b> AV (oder metrisch ohne NV) – die rangbasierte Alternative zur Messwiederholungs-ANOVA.",
+    check:"Der nonparametrische Gegenpart zur ANOVA mit Messwiederholung."},
+  r_anova_isf:{name:"Einfaktorielle ANOVA mit Messwiederholung",
+    why:"Mehr als zwei abhängige metrische Messungen mit gegebener <b>Sphärizität</b> – keine Korrektur nötig.",
+    check:"Bei verletzter Sphärizität entscheidet das Epsilon über die Korrektur."},
+  r_gg:{name:"Greenhouse-Geisser-Korrektur",
+    why:"Messwiederholungs-ANOVA mit <b>verletzter Sphärizität</b> und <b>ε &lt; 0,75</b> – Greenhouse-Geisser korrigiert die Freiheitsgrade konservativer.", warn:true,
+    check:"Bei ε ≥ 0,75 ist Greenhouse-Geisser zu konservativ → Huynh-Feldt."},
+  r_hf:{name:"Huynh-Feldt-Korrektur",
+    why:"Messwiederholungs-ANOVA mit verletzter Sphärizität, aber <b>ε ≥ 0,75</b> – Huynh-Feldt ist hier die weniger konservative, passendere Korrektur.", warn:true,
+    check:"Bei ε &lt; 0,75 wäre Greenhouse-Geisser angemessener."},
+  // Zusammenhang
+  r_mlr:{name:"Multiple lineare Regression",
+    why:"Metrische AV mit <b>mehreren</b> Prädiktoren – modelliert deren gemeinsamen und je eigenen Beitrag.",
+    check:"Bei nur einer UV reicht eine Korrelation bzw. einfache Regression."},
+  r_pearson:{name:"Korrelation nach Pearson",
+    why:"Metrische AV, eine metrische UV, <b>keine Ausreißer</b> – Pearson misst den linearen Zusammenhang.",
+    check:"Ausreißer würden Pearson verzerren → dann Spearman."},
+  r_spearman:{name:"Rangkorrelation nach Spearman",
+    why:"Ordinale Daten oder metrische Daten mit <b>Ausreißern</b> – Spearman korreliert Ränge und ist dadurch robust gegen Ausreißer und Nichtlinearität.",
+    check:"Mehrere Wege führen hierher: ordinale AV, ordinale UV oder Ausreißer bei metrischen Daten."},
+  r_punktbiserial:{name:"Punktbiseriale Korrelation",
+    why:"Metrische AV und <b>dichotome</b> UV – Sonderfall der Pearson-Korrelation.",
+    check:"Inhaltlich oft sinnvoller als Unterschiedshypothese (zwei Gruppen) zu formulieren."},
+  r_ordreg:{name:"Ordinale Regression",
+    why:"Ordinale AV mit <b>mehreren</b> UVs.",
+    check:"Bei einer UV reicht meist die Spearman-Korrelation."},
+  r_vierfelder:{name:"Vierfelderkorrelation (Phi)",
+    why:"Dichotome AV und <b>dichotome</b> UV – der Zusammenhang in einer 2×2-Tabelle.",
+    check:"Bei mehr als zwei Kategorien einer Variable → Kontingenzkoeffizient."},
+  r_kontingenz:{name:"Kontingenzkoeffizient",
+    why:"Dichotome oder nominale AV mit nominaler/dichotomer UV – Zusammenhangsmaß für Kreuztabellen größer als 2×2.",
+    check:"Für reine 2×2-Tabellen ist Phi (Vierfelder) gebräuchlich."},
+  r_binlog:{name:"Binär logistische Regression",
+    why:"<b>Dichotome</b> AV mit metrischer UV oder mehreren UVs – modelliert die Wahrscheinlichkeit der einen Kategorie.",
+    check:"Bei mehr als zwei AV-Kategorien → multinomial logistische Regression."},
+  r_multinom:{name:"Multinomial logistische Regression",
+    why:"<b>Nominale</b> AV (mehr als zwei Kategorien) mit metrischer UV oder mehreren UVs.",
+    check:"Bei dichotomer AV genügt die binäre Variante."},
+  // Moderation
+  r_mod_anova:{name:"Mehrfaktorielle ANOVA",
+    why:"Metrische AV; <b>UV und Moderator definieren beide Gruppen</b>. Die Interaktion UV×Moderator beantwortet die Moderationsfrage.",
+    check:"Beide Faktoren kategorial → klassisches faktorielles Design. Ein metrischer Faktor → ANCOVA bzw. moderierte Regression."},
+  r_mod_ancova:{name:"ANCOVA / ANOVA mit Moderator-Interaktion",
+    why:"Metrische AV; <b>UV kategorial, Moderator metrisch</b>. Der metrische Moderator geht als Kovariate ein, geprüft wird die Interaktion mit der Gruppen-UV.",
+    check:"Ist der Moderator stattdessen kategorial → mehrfaktorielle ANOVA. Ist die UV metrisch → moderierte Regression."},
+  r_mod_groupreg:{name:"Moderierte Regression (Gruppen-Moderator)",
+    why:"Metrische AV; <b>UV metrisch, Moderator kategorial</b>. Die Steigung der UV darf je Moderatorgruppe variieren – getestet über das Produkt UV×Gruppenindikator.",
+    check:"Inhaltlich oft als „unterschiedliche Steigungen je Gruppe“ formuliert; entspricht einer ANCOVA-Sicht mit metrischer UV."},
+  r_mod_modreg:{name:"Moderierte Regression (Produktterm)",
+    why:"Metrische AV; <b>UV und Moderator beide metrisch</b>. Es wird ein <b>Interaktionsterm</b> (UV × Moderator, meist zentriert) in die Regression aufgenommen.",
+    check:"Signifikanter Produktterm = Moderation. Zentrieren der Prädiktoren erleichtert die Interpretation der Haupteffekte."},
+  r_mod_loglin:{name:"Logistische Regression / loglineare Modelle mit Interaktion",
+    why:"<b>Nicht-metrische AV</b> (dichotom/nominal/ordinal): Die Moderation wird über einen Interaktionsterm in der passenden (binär-, multinomial- oder ordinal-)logistischen Regression bzw. einem loglinearen Modell geprüft.",
+    check:"Die Verfahrensfamilie richtet sich nach dem AV-Niveau wie auf der Zusammenhangsseite; ergänzt wird jeweils der Interaktionsterm UV×Moderator."}
+};
+
+const HOW = {
+  r_ttest_zsf:"Der t-Test vergleicht die beiden Gruppen<b>mittelwerte</b> und setzt ihre Differenz ins Verhältnis zur Streuung der Daten (gepoolter Standardfehler). Je größer der Mittelwertunterschied relativ zur Streuung, desto größer der t-Wert. Aus t und den Freiheitsgraden ergibt sich der p-Wert. Voraussetzungen – metrische AV, Normalverteilung pro Gruppe, homogene Varianzen – sind nötig, weil nur dann die t-Verteilung als Prüfverteilung exakt gilt. An dieser Stelle steht er, weil alle drei Bedingungen erfüllt sind; fällt eine weg, übernimmt Welch (Varianzen) oder Mann-Whitney-U (Verteilung).",
+
+  r_welch:"Der Welch-Test ist eine Variante des t-Tests für <b>ungleiche Varianzen</b>. Er poolt die Streuungen nicht, sondern gewichtet sie getrennt und passt die Freiheitsgrade über die Welch-Satterthwaite-Formel nach unten an. Dadurch bleibt der Test auch dann gültig, wenn die Gruppen unterschiedlich stark streuen. Er steht hier, weil die Varianzhomogenität verletzt ist – die einzige Bedingung, die den klassischen t-Test ausschließt. Da Welch bei homogenen Varianzen kaum Power verliert, empfehlen ihn manche generell als Standard.",
+
+  r_mwu:"Der Mann-Whitney-U-Test wirft alle Werte beider Gruppen in eine gemeinsame <b>Rangreihe</b> und prüft, ob die Ränge der einen Gruppe systematisch höher liegen als die der anderen. Er vergleicht also nicht Mittelwerte, sondern die Lage der Verteilungen über Ränge – deshalb braucht er weder metrisches Niveau noch Normalverteilung. Genau das macht ihn zur richtigen Wahl, wenn die AV nur ordinal ist oder die Normalverteilungsannahme nicht hält. Das parametrische Gegenstück wäre der t-Test.",
+
+  r_kruskal:"Der Kruskal-Wallis-Test verallgemeinert den Mann-Whitney-U auf <b>mehr als zwei</b> Gruppen: Alle Werte werden gemeinsam in Ränge überführt, dann wird geprüft, ob sich die mittleren Ränge zwischen den Gruppen unterscheiden. Er beantwortet nur die Globalfrage „gibt es irgendwo einen Unterschied?“ – für paarweise Vergleiche braucht es Post-hoc-Tests (z. B. Dunn). Er steht hier, weil mehr als zwei Gruppen vorliegen, die AV ordinal/nicht normalverteilt ist und keine geordnete Hypothese besteht. Mit Ordnungserwartung wäre Jonckheere-Terpstra stärker.",
+
+  r_jonckheere:"Der Jonckheere-Terpstra-Test ist ein rangbasierter Trendtest: Er prüft nicht nur, <b>ob</b> sich Gruppen unterscheiden, sondern ob sie in einer vorab erwarteten <b>Reihenfolge</b> ansteigen oder abfallen (z. B. niedrig &lt; mittel &lt; hoch). Weil er diese Ordnungsinformation gezielt nutzt, hat er mehr Power als Kruskal-Wallis, wenn die Hypothese tatsächlich gerichtet ist. Genau deshalb steht er an dieser Stelle: mehr als zwei Gruppen, ordinale AV und eine geordnete Erwartung. Ohne diese Erwartung würde man die Power verschenken.",
+
+  r_anova:"Die einfaktorielle ANOVA zerlegt die Gesamtvarianz der Daten in einen Anteil <b>zwischen</b> den Gruppen und einen <b>innerhalb</b> der Gruppen. Ihr F-Wert ist das Verhältnis dieser beiden Varianzanteile – ist die Variation zwischen den Gruppen deutlich größer als zufällig zu erwarten, wird F signifikant. Voraussetzungen sind metrische AV, Normalverteilung und Varianzhomogenität. Sie steht hier, weil all das erfüllt ist und mehr als zwei Gruppen vorliegen. Da F nur „irgendwo ein Unterschied“ sagt, folgt ein Post-hoc-Test wie Tukey HSD für die paarweisen Vergleiche.",
+
+  r_gameshowell:"Bei mehr als zwei Gruppen mit metrischer, normalverteilter AV, aber <b>ungleichen Varianzen</b> greift die Welch-ANOVA (sie korrigiert wie der Welch-Test die Freiheitsgrade). Für die anschließenden paarweisen Vergleiche ist Games-Howell das passende Post-hoc-Verfahren, weil es – anders als Tukey HSD – keine Varianzhomogenität voraussetzt. Diese Kombination steht hier genau deshalb: Die Varianzheterogenität schließt die klassische ANOVA mit Tukey aus.",
+
+  r_kreuz:"Bei einer <b>nominalen</b> AV werden die Häufigkeiten in einer Kreuztabelle dargestellt. Der χ²-Test vergleicht die <b>beobachteten</b> Zellhäufigkeiten mit den <b>erwarteten</b> Häufigkeiten, die bei völliger Unabhängigkeit zu erwarten wären; große Abweichungen ergeben ein großes χ². Mittelwerte oder Ränge gibt es bei nominalen Daten nicht – deshalb ist dieser häufigkeitsbasierte Ansatz hier das einzig Sinnvolle. Wichtig: Die erwarteten Zellhäufigkeiten sollten groß genug sein (Faustregel ≥ 5), sonst ist χ² unzuverlässig (dann exakter Test nach Fisher).",
+
+  r_bowker:"Der Bowker-Test prüft bei <b>abhängigen</b> Messungen mit nominaler AV (mehr als zwei Kategorien), ob die Veränderungen zwischen den beiden Zeitpunkten <b>symmetrisch</b> sind – also ob Wechsel von Kategorie A→B genauso häufig sind wie B→A. Er betrachtet die quadratische Kreuztabelle der Paarungen. Er steht hier, weil die Messungen verbunden sind (dieselben Personen) und die AV mehr als zwei nominale Kategorien hat. Bei genau zwei Kategorien ist er identisch mit McNemar.",
+
+  r_mcnemar:"Der McNemar-Test ist der Spezialfall des Bowker-Tests für eine <b>dichotome</b> AV bei abhängigen Messungen. Er betrachtet ausschließlich die <b>Wechsler</b> – die Fälle, die vom ersten zum zweiten Zeitpunkt ihre Kategorie geändert haben – und prüft, ob Wechsel in die eine Richtung häufiger sind als in die andere. Die „Bleiber“ tragen keine Information über Veränderung und werden ignoriert. Er steht hier, weil zwei verbundene Messungen mit zwei Kategorien vorliegen (typisch: vorher/nachher ja/nein).",
+
+  r_vorzeichen:"Der Vorzeichentest bildet für jedes Messpaar die Differenz und schaut nur auf deren <b>Vorzeichen</b> (Verbesserung oder Verschlechterung) – die Größe der Differenz bleibt unberücksichtigt. Geprüft wird, ob beide Richtungen etwa gleich häufig sind (wie ein Münzwurf). Weil nur die Richtung zählt, genügt ordinales Niveau. Er steht hier für zwei abhängige Messungen mit ordinaler AV. Sind die Daten metrisch, nutzt der Wilcoxon-Test zusätzlich die Größe der Differenzen und ist dadurch stärker.",
+
+  r_ttest_isf:"Der gepaarte t-Test bildet pro Person die <b>Differenz</b> der beiden Messungen und testet, ob deren Mittelwert von null abweicht. Durch die Differenzbildung fällt die personenbezogene Grundstreuung heraus – das macht den Test bei verbundenen Daten sensitiver als der ungepaarte. Voraussetzung ist, dass diese <b>Differenzen normalverteilt</b> sind (nicht die Rohwerte!). Er steht hier, weil zwei verbundene metrische Messungen vorliegen und die Differenzen die NV erfüllen. Andernfalls greift Wilcoxon.",
+
+  r_wilcoxon:"Der Wilcoxon-Vorzeichen-Rang-Test ist das nonparametrische Gegenstück zum gepaarten t-Test. Er bildet die Differenzen, ordnet ihre <b>Beträge</b> in Ränge und summiert die Ränge getrennt nach Vorzeichen. Anders als der reine Vorzeichentest nutzt er damit auch die <b>Größe</b> der Differenzen, bleibt aber robust gegen Verletzungen der Normalverteilung. Er steht hier, weil zwei verbundene metrische Messungen vorliegen, deren Differenzen <b>nicht</b> normalverteilt sind.",
+
+  r_cochran:"Der Cochran-Q-Test verallgemeinert McNemar auf <b>mehr als zwei</b> abhängige Messungen mit dichotomer AV. Er prüft, ob sich der Anteil der „Treffer“ (z. B. „ja“) über die Messzeitpunkte hinweg verändert. Er steht hier, weil mehrere verbundene Messungen einer 0/1-Variable vorliegen – etwa dieselbe Aufgabe zu drei Zeitpunkten gelöst/nicht gelöst. Wird Q signifikant, zeigen Post-hoc-Vergleiche (paarweise McNemar), zwischen welchen Zeitpunkten der Unterschied liegt.",
+
+  r_friedman:"Der Friedman-Test ist das nonparametrische Pendant zur Messwiederholungs-ANOVA. Er <b>rangordnet die Werte innerhalb jeder Person</b> über die Messzeitpunkte und prüft, ob bestimmte Zeitpunkte systematisch höhere Ränge bekommen. Weil innerhalb jeder Person gerankt wird, braucht es keine Normalverteilung und nur ordinales Niveau. Er steht hier für mehr als zwei verbundene Messungen mit ordinaler AV (oder metrisch ohne NV). Für die paarweisen Vergleiche folgen Post-hoc-Tests (z. B. Nemenyi).",
+
+  r_anova_isf:"Die ANOVA mit Messwiederholung vergleicht mehr als zwei <b>verbundene</b> metrische Messungen. Sie zieht – ähnlich dem gepaarten t-Test – die personenbezogene Streuung heraus und gewinnt dadurch Power. Ihre zentrale Zusatzannahme ist die <b>Sphärizität</b>: Die Varianzen aller paarweisen Differenzen zwischen den Messzeitpunkten müssen etwa gleich sein (geprüft mit dem Mauchly-Test). Sie steht hier, weil Sphärizität gegeben ist; ist sie verletzt, werden die Freiheitsgrade korrigiert (Greenhouse-Geisser oder Huynh-Feldt).",
+
+  r_gg:"Ist bei der Messwiederholungs-ANOVA die <b>Sphärizität verletzt</b>, wird der Test zu liberal (zu viele falsch-positive Ergebnisse). Die Greenhouse-Geisser-Korrektur multipliziert die Freiheitsgrade mit einem Schätzer ε (zwischen 0 und 1), der das Ausmaß der Verletzung abbildet, und macht den Test dadurch <b>konservativer</b>. Sie steht hier, weil ε &lt; 0,75 – also eine deutliche Verletzung vorliegt, bei der die stärkere (konservativere) Korrektur angemessen ist. Bei ε ≥ 0,75 wäre Greenhouse-Geisser zu streng, dann Huynh-Feldt.",
+
+  r_hf:"Die Huynh-Feldt-Korrektur passt – wie Greenhouse-Geisser – bei verletzter Sphärizität die Freiheitsgrade der Messwiederholungs-ANOVA über ε an, ist dabei aber <b>weniger konservativ</b>. Sie steht hier, weil ε ≥ 0,75 ist: Die Sphärizitätsverletzung ist moderat, und Greenhouse-Geisser würde unnötig Power kosten. Faustregel: ε &lt; 0,75 → Greenhouse-Geisser, ε ≥ 0,75 → Huynh-Feldt.",
+
+  r_mlr:"Die multiple lineare Regression sagt eine metrische AV aus <b>mehreren</b> Prädiktoren gleichzeitig vorher. Jeder Regressionskoeffizient gibt den Effekt eines Prädiktors an, <b>während die anderen konstant gehalten</b> werden – so trennt sie überlappende Einflüsse. Das Modell minimiert die Summe der quadrierten Vorhersagefehler (kleinste Quadrate). Sie steht hier, weil die AV metrisch ist und mehr als eine UV vorliegt. Bei nur einer UV genügt eine einfache Korrelation/Regression.",
+
+  r_pearson:"Die Pearson-Korrelation misst die Stärke und Richtung des <b>linearen</b> Zusammenhangs zweier metrischer Variablen als Wert r zwischen −1 und +1. Sie beruht auf der Kovarianz, standardisiert durch beide Standardabweichungen. Weil sie auf den Rohwerten rechnet, reagiert sie <b>empfindlich auf Ausreißer</b> und setzt einen linearen Zusammenhang voraus. Sie steht hier, weil beide Variablen metrisch und das Streudiagramm ausreißerfrei ist. Bei Ausreißern oder Nichtlinearität ist Spearman robuster.",
+
+  r_spearman:"Die Spearman-Rangkorrelation wandelt beide Variablen zunächst in <b>Ränge</b> um und berechnet darauf die Korrelation. Dadurch erfasst sie jeden <b>monotonen</b> Zusammenhang (nicht nur linearen) und ist unempfindlich gegen Ausreißer und schiefe Verteilungen. Sie steht hier, weil entweder ordinale Daten vorliegen oder metrische Daten mit Ausreißern im Streudiagramm – Situationen, in denen Pearson verzerrt würde.",
+
+  r_punktbiserial:"Die punktbiseriale Korrelation ist mathematisch ein <b>Spezialfall der Pearson-Korrelation</b> für den Fall, dass eine Variable metrisch und die andere <b>dichotom</b> (0/1) ist. Sie quantifiziert, wie stark die beiden Gruppen der dichotomen Variable sich im Mittel der metrischen Variable unterscheiden. Sie steht hier genau für diese Konstellation. Inhaltlich beschreibt das oft denselben Sachverhalt wie ein Gruppenvergleich – häufig ist eine Unterschiedshypothese (t-Test) die natürlichere Formulierung.",
+
+  r_ordreg:"Die ordinale Regression modelliert eine <b>ordinale</b> AV (geordnete Kategorien, z. B. niedrig/mittel/hoch) aus mehreren Prädiktoren. Statt eines Mittelwerts schätzt sie über kumulative Wahrscheinlichkeiten, in welche oder höhere Kategorie ein Fall fällt (proportionale-Odds-Modell). Sie steht hier, weil die AV ordinal ist und mehr als eine UV vorliegt – ein Fall, den weder die metrische Regression noch eine einzelne Rangkorrelation abdeckt.",
+
+  r_vierfelder:"Die Vierfelderkorrelation (Phi-Koeffizient) misst den Zusammenhang zweier <b>dichotomer</b> Variablen in einer 2×2-Kreuztabelle. Sie ist die Anwendung der Pearson-Korrelation auf zwei 0/1-Variablen und liegt zwischen −1 und +1. Sie steht hier, weil sowohl AV als auch UV genau zwei Kategorien haben. Hat eine der Variablen mehr als zwei Kategorien, wird die Tabelle größer als 2×2, und man nutzt den Kontingenzkoeffizienten.",
+
+  r_kontingenz:"Der Kontingenzkoeffizient misst die Stärke des Zusammenhangs in einer Kreuztabelle, die <b>größer als 2×2</b> ist (nominale Variablen mit mehreren Kategorien). Er basiert auf dem χ²-Wert der Tabelle, normiert auf einen Bereich um 0 bis knapp unter 1. Er steht hier, weil mindestens eine der nominalen/dichotomen Variablen mehr als zwei Ausprägungen hat. Für reine 2×2-Tabellen ist Phi (Vierfelder) gebräuchlicher.",
+
+  r_binlog:"Die binär logistische Regression sagt die Wahrscheinlichkeit für eine von <b>zwei</b> Ausprägungen der AV (z. B. Erfolg/Misserfolg) aus einem metrischen Prädiktor oder mehreren UVs vorher. Sie modelliert nicht die Wahrscheinlichkeit direkt, sondern deren <b>Logit</b> (Log-Odds) als lineare Funktion der Prädiktoren – so bleibt die Vorhersage immer zwischen 0 und 1. Die Koeffizienten lassen sich als Odds Ratios deuten. Sie steht hier, weil die AV dichotom ist und ein metrischer bzw. mehrere Prädiktoren vorliegen.",
+
+  r_multinom:"Die multinomiale logistische Regression erweitert die binäre Variante auf eine <b>nominale</b> AV mit <b>mehr als zwei</b> ungeordneten Kategorien. Sie wählt eine Referenzkategorie und modelliert für jede übrige Kategorie deren Log-Odds gegenüber dieser Referenz. Sie steht hier, weil die AV nominal mit mehreren Kategorien ist und metrische oder mehrere UVs vorliegen. Wären die Kategorien geordnet, wäre die ordinale Regression passender; bei nur zwei Kategorien die binäre.",
+
+  r_mod_anova:"Moderation heißt: Der Effekt der UV auf die AV hängt vom Moderator ab – ein „Effekt auf einen Effekt“. Wenn UV und Moderator beide Gruppen definieren, ist das eine <b>mehrfaktorielle (z. B. zweifaktorielle) ANOVA</b>: Sie zerlegt die Varianz in die <b>Haupteffekte</b> beider Faktoren und – entscheidend für die Moderation – den <b>Interaktionseffekt</b> UV×Moderator. Ein signifikanter Interaktionsterm bedeutet, dass der Gruppenunterschied der UV je nach Moderatorstufe verschieden ausfällt. Sie steht hier, weil beide Faktoren kategorial sind; bei einer Crossover-Interaktion interpretiert man die Haupteffekte nicht isoliert, sondern die Interaktion.",
+
+  r_mod_ancova:"Ist die UV kategorial, der Moderator aber metrisch, lässt sich die Moderation als <b>ANCOVA mit Interaktion</b> modellieren: Der metrische Moderator geht als Kovariate ein, und geprüft wird der <b>Interaktionsterm Gruppe×Kovariate</b>. Ist er signifikant, unterscheiden sich die Gruppen-Effekte über die Ausprägung des Moderators hinweg (die Regressionsgeraden je Gruppe sind nicht parallel). Sie steht hier wegen der Kombination kategoriale UV + metrischer Moderator; ist der Moderator ebenfalls kategorial, wird es eine mehrfaktorielle ANOVA.",
+
+  r_mod_groupreg:"Bei metrischer UV und gruppendefiniertem Moderator prüft man, ob die <b>Steigung</b> der UV-AV-Beziehung je Moderatorgruppe verschieden ist. In der Regression nimmt man dazu das Produkt aus UV und Gruppenindikator(en) auf; ein signifikanter Produktterm zeigt unterschiedliche Steigungen und damit Moderation. Das ist dieselbe Idee wie eine ANCOVA, nur mit der metrischen Variable als eigentlichem Prädiktor. Sie steht hier wegen metrischer UV + kategorialem Moderator.",
+
+  r_mod_modreg:"Sind UV und Moderator beide metrisch, prüft die <b>moderierte Regression</b> einen <b>Produktterm</b> UV×Moderator: AV = b₁·UV + b₂·Moderator + b₃·(UV×Moderator). Der Koeffizient b₃ ist der Moderationseffekt – er gibt an, wie sich die Wirkung der UV pro Einheit des Moderators ändert. Üblich ist, beide Prädiktoren vorher zu <b>zentrieren</b>, damit die Haupteffekte interpretierbar bleiben und Multikollinearität mit dem Produktterm sinkt. Sie steht hier, weil beide Variablen metrisch sind.",
+
+  r_mod_loglin:"Ist die AV nicht metrisch, verschiebt sich die Moderation in die Familie der <b>logistischen bzw. loglinearen Modelle</b>: Man wählt – wie auf der Zusammenhangsseite – das zum AV-Niveau passende Verfahren (binär-, multinomial- oder ordinal-logistisch) und nimmt zusätzlich einen <b>Interaktionsterm UV×Moderator</b> auf. Ein signifikanter Interaktionsterm zeigt, dass der Einfluss der UV auf die (Log-)Odds der AV vom Moderator abhängt. Sie steht hier als Sammelknoten für alle nicht-metrischen AV; das konkrete Verfahren richtet sich nach Dichotomie/Nominal-/Ordinalniveau der AV."
+};
+
+
+/* ============================================================
+   Engine
+   ============================================================ */
+let currentRoot = "unterschied";
+let stack = [];        // node IDs visited
+let crumbs = [];       // {text, choice:bool}
+
+const stage = document.getElementById('stage');
+const pathEl = document.getElementById('path');
+
+function rootStart(){ return TREES[currentRoot].start; }
+function getNode(id){ return TREES[currentRoot].nodes[id]; }
+
+function renderPath(){
+  pathEl.innerHTML = '';
+  crumbs.forEach((c,i)=>{
+    if(i>0){
+      const s=document.createElement('span');
+      s.className='crumb-sep'; s.textContent='›';
+      pathEl.appendChild(s);
+    }
+    const el=document.createElement('span');
+    el.className='crumb'+(c.choice?' choice':'');
+    el.textContent=c.text;
+    pathEl.appendChild(el);
+  });
+}
+
+function renderNode(id){
+  const node = getNode(id);
+  stage.innerHTML='';
+  const card=document.createElement('div');
+  card.className='card';
+
+  card.innerHTML = `
+    <div class="node-tag">${node.tag}</div>
+    <div class="question">${node.q}</div>
+    ${node.hint?`<div class="hint">${node.hint}</div>`:''}
+    <div class="options"></div>
+  `;
+  const optWrap = card.querySelector('.options');
+  node.opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='opt';
+    b.innerHTML=`<span class="dot"></span>${o.label}<span class="arrow">→</span>`;
+    b.onclick=()=>choose(id, o);
+    optWrap.appendChild(b);
+  });
+
+  if(stack.length>1){
+    const back=document.createElement('div');
+    back.className='backline';
+    back.innerHTML='↩ einen Schritt zurück';
+    back.onclick=goBack;
+    card.appendChild(back);
+  }
+  stage.appendChild(card);
+  drawMap();
+}
+
+function renderResult(resId){
+  const r = RESULTS[resId];
+  stage.innerHTML='';
+  const card=document.createElement('div');
+  card.className='card result';
+  card.innerHTML=`
+    <div class="node-tag">Empfohlenes Verfahren</div>
+    <div class="test-name${r.warn?' warn':''}">${r.name}</div>
+    <div class="why${r.warn?' warn':''}"><b>Warum?</b> ${r.why}</div>
+    <div class="howbox">
+      <div class="howbox-h">Wie der Test funktioniert &amp; warum er hier steht</div>
+      <p>${HOW[resId]||''}</p>
+    </div>
+    <div class="selfcheck"><b>Selbstcheck:</b> ${r.check}</div>
+    <div class="actions">
+      <button class="btn primary" id="restart">Neue Frage durchspielen</button>
+      <button class="btn ghost" id="back">↩ zurück</button>
+    </div>
+  `;
+  stage.appendChild(card);
+  document.getElementById('restart').onclick=()=>start(currentRoot);
+  document.getElementById('back').onclick=goBack;
+  drawMap();
+}
+
+function choose(fromId, opt){
+  markStarted();
+  crumbs.push({text:opt.crumb, choice:true});
+  // result?
+  if(opt.go.startsWith('r_') || RESULTS[opt.go]){
+    stack.push(opt.go);
+    renderPath();
+    renderResult(opt.go);
+  } else {
+    stack.push(opt.go);
+    crumbs.push({text:getNode(opt.go).tag, choice:false});
+    renderPath();
+    renderNode(opt.go);
+  }
+}
+
+/* Onboarding-Header einklappen, Panel-Kopfzeile zeigen */
+let _started=false;
+function markStarted(){
+  if(_started) return;
+  _started=true;
+  document.getElementById('wrap').classList.add('started');
+  // nach der Höhenanimation Karte neu zentrieren
+  setTimeout(()=>{ drawMap(); }, 480);
+}
+
+function goBack(){
+  // pop current node + its preceding choice crumb (and tag crumb)
+  const top = stack[stack.length-1];
+  const isResult = RESULTS[top] && !getNode(top);
+  if(isResult){
+    stack.pop();                 // remove result
+    crumbs.pop();                // remove the choice crumb
+  } else {
+    stack.pop();                 // remove current node
+    crumbs.pop();                // remove its tag crumb
+    crumbs.pop();                // remove the choice crumb that led here
+  }
+  const back = stack[stack.length-1];
+  renderPath();
+  renderNode(back);
+}
+
+function start(root){
+  currentRoot = root;
+  const startId = rootStart();
+  stack=[startId];
+  crumbs=[{text:getNode(startId).tag, choice:false}];
+  renderPath();
+  renderNode(startId);
+}
+
+/* Hypothesentyp umschalten – hält große Buttons UND Segmented-Toggle synchron */
+function setMode(root){
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active', b.dataset.root===root));
+  document.querySelectorAll('.seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.root===root));
+  start(root);
+}
+document.querySelectorAll('.mode-btn, .seg-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>setMode(btn.dataset.root));
+});
+
+/* Info-Button im Panelkopf blendet die Kurzbeschreibung ein/aus */
+(function(){
+  const info=document.getElementById('infoBtn');
+  const desc=document.getElementById('panelDesc');
+  if(info&&desc) info.onclick=()=>{
+    const show=desc.classList.toggle('show');
+    info.classList.toggle('on',show);
+  };
+})();
+
+/* ============================================================
+   Baum als Maps-artige Karte: scroll-/zoombar, Auto-Center.
+   ============================================================ */
+const mapHost  = document.getElementById('mapHost');
+const mapStage = document.getElementById('mapStage');
+const mapPan   = document.getElementById('mapPan');
+const DESKTOP  = ()=>window.matchMedia('(min-width:1080px)').matches;
+
+let zoom=1;
+const ZMIN=0.45, ZMAX=2.2;
+function applyZoom(){ mapPan.style.transform='scale('+zoom+')'; }
+
+/* Pan per Drag (nur Desktop, wo mapStage scrollt) */
+(function enableDrag(){
+  let down=false,sx,sy,sl,st;
+  mapStage.addEventListener('mousedown',e=>{
+    if(!DESKTOP()) return;
+    // nicht draggen, wenn auf Steuerung/Panel geklickt
+    if(e.target.closest('.panel,.mapControls,.mapLegendFloat')) return;
+    down=true; sx=e.clientX; sy=e.clientY; sl=mapStage.scrollLeft; st=mapStage.scrollTop;
+    mapStage.classList.add('grabbing'); e.preventDefault();
+  });
+  window.addEventListener('mousemove',e=>{
+    if(!down) return;
+    mapStage.scrollLeft=sl-(e.clientX-sx);
+    mapStage.scrollTop =st-(e.clientY-sy);
+  });
+  window.addEventListener('mouseup',()=>{ down=false; mapStage.classList.remove('grabbing'); });
+})();
+
+/* Scroll-Zoom mit Strg/Cmd (sonst normales Scrollen) */
+mapStage.addEventListener('wheel',e=>{
+  if(!DESKTOP()) return;
+  if(e.ctrlKey||e.metaKey){
+    e.preventDefault();
+    const before=zoom;
+    zoom=Math.min(ZMAX,Math.max(ZMIN, zoom*(e.deltaY<0?1.12:0.89)));
+    if(zoom!==before) applyZoom();
+  }
+},{passive:false});
+
+document.getElementById('zoomIn').onclick =()=>{ zoom=Math.min(ZMAX,zoom*1.18); applyZoom(); };
+document.getElementById('zoomOut').onclick=()=>{ zoom=Math.max(ZMIN,zoom*0.85); applyZoom(); };
+document.getElementById('zoomFit').onclick=()=>{ centerOnCurrent(true); };
+
+/* aktuellen Knoten in die sichtbare Fläche zentrieren (Maps: „folge dem Standort") */
+let lastCenter=null;
+const PAN_PAD_L=460, PAN_PAD_T=24;   // muss zu .mapPan padding passen
+function centerOnCurrent(smooth){
+  if(!DESKTOP()) return;
+  const c=lastCenter; if(!c) return;
+  // Knotenposition im skalierten Pan-Raum (inkl. Polster)
+  const tx=(c.x+PAN_PAD_L)*zoom, ty=(c.y+PAN_PAD_T)*zoom;
+  // Panel verdeckt links ~ Panelbreite; sichtbare Mitte nach rechts schieben
+  const panel=document.getElementById('panel');
+  const offsetL=(panel?panel.offsetWidth:0)+40;
+  const visW=mapStage.clientWidth, visH=mapStage.clientHeight;
+  const targetL=tx-(offsetL+(visW-offsetL)/2);
+  const targetT=ty-visH/2;
+  mapStage.scrollTo({left:Math.max(0,targetL),top:Math.max(0,targetT),behavior:smooth?'smooth':'auto'});
+}
+
+let _rt;
+window.addEventListener('resize',()=>{
+  clearTimeout(_rt);
+  _rt=setTimeout(()=>{ drawMap(); },150);
+});
+
+/* Box-Maße: genug Platz für Knoten- UND Kantenbeschriftung dazwischen */
+const NODE_W=150, NODE_H=30;
+const GAP_X=92;                 // horizontaler Abstand zwischen Box-Spalten → Platz für Kantenlabel
+const COL_W=NODE_W+GAP_X;       // Spaltenbreite (Box + Lücke)
+const ROW_H=46;                 // vertikaler Reihenabstand (genug Luft, kein Overlap)
+const PAD_X=16, PAD_Y=20;
+
+/* Kurzlabels für die Knoten – sprechend statt abgeschnitten */
+const NODE_SHORT = {
+  // Unterschied
+  u_design:"Stichproben?", u_zsf_stufen:"Stufen?", u_isf_stufen:"Stufen?",
+  u_zsf2_av:"AV-Niveau?", u_zsf3_av:"AV-Niveau?", u_isf2_av:"AV-Niveau?", u_isf3_av:"AV-Niveau?",
+  u_zsf2_nv:"NV?", u_zsf3_nv:"NV?", u_isf2_nv:"NV der Diff.?",
+  u_zsf2_var:"Varianzen?", u_zsf3_var:"Varianzen?",
+  u_zsf3_ordnung:"Geordnet?", u_isf3_sph:"Sphärizität?", u_isf3_eps:"Epsilon?",
+  // Zusammenhang
+  z_av:"AV-Niveau?", z_m_uv:"Anzahl UVs?", z_o_uv:"Anzahl UVs?", z_d_uv:"Anzahl UVs?", z_n_uv:"Anzahl UVs?",
+  z_m_uvtyp:"UV-Niveau?", z_d_uvtyp:"UV-Niveau?", z_n_uvtyp:"UV-Niveau?",
+  z_m_ausreisser:"Ausreißer?",
+  // Moderation
+  m_av:"AV-Niveau?", m_uv:"UV-Art?", m_uvkat_mod:"Moderator?", m_uvmet_mod:"Moderator?"
+};
+function nodeLabel(id){ return NODE_SHORT[id] || (TREES[currentRoot].nodes[id]||{}).tag || id; }
+
+function resultLabel(id){
+  const r=RESULTS[id]; if(!r) return id;
+  return r.name
+    .replace('für unabhängige Stichproben','(unabh.)')
+    .replace('für abhängige Stichproben','(abh.)')
+    .replace('Korrelation nach ','Korr.: ')
+    .replace('Rangkorrelation nach Spearman','Spearman-Korr.')
+    .replace(/\s*\(.*?\)$/,'');
+}
+
+/* Baum traversieren; Kante trägt das Entscheidungs-Label (crumb) */
+function buildLayout(root){
+  const tree=TREES[root];
+  const nodes=[]; const edges=[];
+  let leafRow=0;
+  function walk(id, depth){
+    const isResult = !!RESULTS[id] && !tree.nodes[id];
+    if(isResult){
+      const row=leafRow++;
+      const uid='res__'+id+'__'+row;
+      nodes.push({uid,id,depth,row,type:'result',label:resultLabel(id)});
+      return {uid,row};
+    }
+    const node=tree.nodes[id];
+    const childRows=[];
+    const myUid='nd__'+id;
+    node.opts.forEach(o=>{
+      const child=walk(o.go, depth+1);
+      edges.push({from:myUid, to:child.uid, fromId:id, toId:o.go, label:o.crumb});
+      childRows.push(child.row);
+    });
+    const row=(Math.min(...childRows)+Math.max(...childRows))/2;
+    nodes.push({uid:myUid,id,depth,row,type:'node',label:nodeLabel(id)});
+    return {uid:myUid,row};
+  }
+  walk(tree.start,0);
+  return {nodes,edges,rows:leafRow};
+}
+
+let layoutCache={};
+function getLayout(root){
+  if(!layoutCache[root]) layoutCache[root]=buildLayout(root);
+  return layoutCache[root];
+}
+
+function activeSet(){ return new Set(stack); }
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function drawMap(){
+  const {nodes,edges,rows}=getLayout(currentRoot);
+  const maxDepth=Math.max(...nodes.map(n=>n.depth));
+  const W=PAD_X*2 + maxDepth*COL_W + NODE_W;
+  const H=PAD_Y*2 + rows*ROW_H;
+
+  const pos={};
+  nodes.forEach(n=>{
+    pos[n.uid]={
+      x:PAD_X + n.depth*COL_W,        // linke Kante der Box
+      y:PAD_Y + n.row*ROW_H + ROW_H/2 // Box-Mitte vertikal
+    };
+  });
+
+  const active=activeSet();
+  const currentId=stack[stack.length-1];
+
+  function nodeState(n){
+    if(n.type==='result') return currentId===n.id ? 'result' : 'dim';
+    if(n.id===currentId) return 'current';
+    if(active.has(n.id)) return 'active';
+    return 'dim';
+  }
+  function edgeLit(e){
+    const a=stack.indexOf(e.fromId), b=stack.indexOf(e.toId);
+    return a!==-1 && b!==-1 && b===a+1;
+  }
+
+  let svg=`<svg class="map-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // ---- Kanten zuerst (liegen hinter den Boxen) ----
+  edges.forEach(e=>{
+    const p=pos[e.from], q=pos[e.to]; if(!p||!q) return;
+    const x1=p.x+NODE_W, y1=p.y;     // rechte Kante der Quell-Box
+    const x2=q.x,        y2=q.y;     // linke Kante der Ziel-Box
+    const mx=(x1+x2)/2;
+    const lit=edgeLit(e);
+    svg+=`<path class="medge${lit?' lit':''}" d="M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}"/>`;
+  });
+
+  // ---- Kanten-Labels (über den Kanten, mit kleinem Hintergrund) ----
+  edges.forEach(e=>{
+    const p=pos[e.from], q=pos[e.to]; if(!p||!q) return;
+    const x1=p.x+NODE_W, x2=q.x;
+    const lx=(x1+x2)/2;
+    const ly=(p.y+q.y)/2 - 3;        // mittig auf der Kante, leicht angehoben
+    const lit=edgeLit(e);
+    const txt=esc(e.label);
+    const w=txt.length*5.6+12;
+    svg+=`<g class="medge-lbl${lit?' lit':''}">`;
+    svg+=`<rect x="${lx-w/2}" y="${ly-9}" width="${w}" height="16" rx="5"/>`;
+    svg+=`<text x="${lx}" y="${ly+2.5}" text-anchor="middle" font-size="9">${txt}</text>`;
+    svg+=`</g>`;
+  });
+
+  // ---- Knoten-Boxen ----
+  nodes.forEach(n=>{
+    const p=pos[n.uid]; const st=nodeState(n);
+    const x=p.x, y=p.y-NODE_H/2;
+    const maxChars=Math.floor((NODE_W-14)/5.9);
+    let txt=n.label;
+    if(txt.length>maxChars) txt=txt.slice(0,maxChars-1)+'…';
+    txt=esc(txt);
+    svg+=`<g class="mn ${st}">`;
+    svg+=`<rect x="${x}" y="${y}" width="${NODE_W}" height="${NODE_H}" rx="8" fill="var(--bg)" stroke="var(--panel-edge)" stroke-width="1.3"/>`;
+    svg+=`<text x="${x+NODE_W/2}" y="${y+NODE_H/2+3.6}" text-anchor="middle" font-size="10.5">${txt}</text>`;
+    svg+=`</g>`;
+  });
+
+  svg+=`</svg>`;
+  mapHost.innerHTML=svg;
+  applyZoom();
+
+  // Position des aktuellen Knotens (für Auto-Center) bestimmen.
+  // Bei mehrfach vorkommenden Ergebnissen: das Vorkommen wählen, dessen
+  // eingehende Kante vom vorletzten Pfad-Knoten stammt.
+  let curUid=null;
+  const parentId = stack.length>=2 ? stack[stack.length-2] : null;
+  if(RESULTS[currentId] && !TREES[currentRoot].nodes[currentId]){
+    // Ergebnis: passende Kante suchen
+    const e = edges.find(e=>e.toId===currentId && e.fromId===parentId);
+    if(e) curUid = e.to;
+    if(!curUid){ const any=nodes.find(n=>n.id===currentId); if(any) curUid=any.uid; }
+  } else {
+    const nd=nodes.find(n=>n.id===currentId && n.type==='node');
+    if(nd) curUid=nd.uid;
+  }
+  if(curUid && pos[curUid]){ lastCenter={x:pos[curUid].x+NODE_W/2, y:pos[curUid].y}; }
+  centerOnCurrent(true);
+}
+
+start('unterschied');
+// nach initialem Layout sicher zentrieren
+setTimeout(()=>centerOnCurrent(false),60);
+</script>
+</body>
+</html>
