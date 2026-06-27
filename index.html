@@ -399,10 +399,14 @@
   }
   .wel-arrow{position:absolute;top:18px;right:18px;color:var(--ink-faint);font-size:1.1rem;transition:.18s}
   .wel-card:hover .wel-arrow{color:var(--teal);transform:translateX(2px)}
+  .wel-foot{
+    flex:0 0 auto;text-align:center;padding:0 22px 22px;
+    font-family:'Spline Sans Mono',monospace;font-size:.7rem;color:var(--ink-faint);
+  }
   @media (max-width:720px){
     .wel-cards{grid-template-columns:1fr;max-width:420px}
     .wel-card p{max-width:none}
-    .wel-main{padding:6px 20px 48px}
+    .wel-main{padding:6px 20px 32px}
   }
 
   /* ===== Onboarding-Kollaps: großer Header weicht Panel-Kopfzeile ===== */
@@ -498,6 +502,7 @@
       </button>
     </div>
   </main>
+  <div class="wel-foot"><a class="legal-link" href="rechtliches.html">Impressum &amp; Datenschutz</a></div>
 </div>
 <div class="wrap" id="wrap">
   <header id="bigHeader">
