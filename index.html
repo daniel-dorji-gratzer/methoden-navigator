@@ -445,6 +445,46 @@
   .pt-info:hover{border-color:var(--teal);color:var(--teal)}
   .pt-info.on{background:rgba(45,212,191,.14);border-color:var(--teal);color:var(--teal)}
 
+  /* ===== Erklärmodus (Stufe 3) ===== */
+  .pt-tools{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .pt-tools .pt-info{margin-left:0}
+  .pt-toggle{
+    display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;
+    background:transparent;border:1px solid var(--panel-edge);border-radius:999px;
+    color:var(--ink-faint);font-family:'Spline Sans Mono',monospace;font-size:.64rem;
+    letter-spacing:.04em;padding:5px 10px;line-height:1;transition:.15s;
+  }
+  .pt-toggle:hover{border-color:var(--teal);color:var(--ink-soft)}
+  .pt-toggle .tdot{width:7px;height:7px;border-radius:50%;background:var(--panel-edge);transition:.15s}
+  .wrap.explain-on .pt-toggle{border-color:var(--teal);color:var(--teal)}
+  .wrap.explain-on .pt-toggle .tdot{background:var(--teal)}
+  /* anklickbares Inline-Glossar */
+  .gloss-item{cursor:pointer;transition:color .15s}
+  .gloss-item:hover{color:var(--teal)}
+  /* markierte Begriffe im Inhalt – nur im Erklärmodus sichtbar/aktiv */
+  .wrap.explain-on .gloss{
+    border-bottom:1px dotted var(--ink-faint);cursor:pointer;
+    transition:color .15s,border-color .15s;
+  }
+  .wrap.explain-on .gloss:hover,.wrap.explain-on .gloss:focus-visible{
+    color:var(--teal);border-bottom-color:var(--teal);outline:none;
+  }
+  .gloss-pop{
+    position:fixed;z-index:60;max-width:300px;
+    background:rgba(18,38,52,.97);border:1px solid var(--panel-edge);border-radius:12px;
+    box-shadow:0 18px 50px -20px rgba(0,0,0,.85);padding:13px 15px;
+    font-size:.84rem;color:var(--ink-soft);line-height:1.5;
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  }
+  .gloss-pop .cat{
+    display:block;font-family:'Spline Sans Mono',monospace;font-size:.6rem;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:6px;
+  }
+  .gloss-pop h4{
+    font-family:'Fraunces',serif;font-weight:600;font-size:1rem;color:var(--ink);
+    margin-bottom:7px;letter-spacing:-.01em;
+  }
+
   /* Segmented-Toggle */
   .seg{
     display:flex;gap:3px;padding:3px;border-radius:11px;
@@ -542,7 +582,10 @@
         <div class="panel-head" id="panelHead">
           <div class="panel-title">
             <span class="pt-name">Methoden-<em>Navigator</em></span>
-            <button class="pt-info" id="infoBtn" title="Worum geht's?">?</button>
+            <div class="pt-tools">
+              <button class="pt-toggle" id="explainToggle" type="button" aria-pressed="false" title="Erklärmodus: Fachbegriffe markieren und per Klick erklären"><span class="tdot"></span>Erklären</button>
+              <button class="pt-info" id="infoBtn" title="Worum geht's?">?</button>
+            </div>
           </div>
           <div class="seg" id="seg">
             <button class="seg-btn active" data-root="unterschied">Unterschied</button>
@@ -553,7 +596,7 @@
         </div>
         <div class="path" id="path"></div>
         <div id="stage"></div>
-        <div class="glossary">
+        <div class="glossary" id="glossary">
           <span><b>ZSF</b> = unabh. Stichproben</span>
           <span><b>ISF</b> = abh. Stichproben</span>
           <span><b>AV</b> = abh. Variable</span>
@@ -632,6 +675,7 @@ function renderNode(id){
     card.appendChild(back);
   }
   stage.appendChild(card);
+  annotateGlossary(stage);
   drawMap();
 }
 
@@ -657,6 +701,7 @@ function renderResult(resId){
   stage.appendChild(card);
   document.getElementById('restart').onclick=()=>start(currentRoot);
   document.getElementById('back').onclick=goBack;
+  annotateGlossary(stage);
   drawMap();
 }
 
@@ -975,6 +1020,143 @@ function drawMap(){
   if(curUid && pos[curUid]){ lastCenter={x:pos[curUid].x+NODE_W/2, y:pos[curUid].y}; }
   centerOnCurrent(true);
 }
+
+/* ============================================================
+   Erklärmodus (Stufe 3): Fachbegriffe aus window.CONCEPTS markieren
+   und per Klick erklären. Sitzungsweise, ohne Speicher (DSGVO).
+   ============================================================ */
+const CONCEPTS = window.CONCEPTS || {};
+// Begriffsindex: term + aliases → Konzept-ID, längste zuerst (längster Match gewinnt)
+const TERM_INDEX = (()=>{
+  const list=[];
+  for(const [id,c] of Object.entries(CONCEPTS)){
+    for(const name of [c.term, ...(c.aliases||[])]){
+      if(name && String(name).trim()) list.push({text:String(name).trim(), id});
+    }
+  }
+  return list.sort((a,b)=>b.text.length-a.text.length);
+})();
+const _isWord = ch => /[0-9A-Za-zÀ-ÖØ-öø-ÿ_]/.test(ch||'');
+function _indexOfWord(text, term, from){
+  const hay=text.toLowerCase(), needle=term.toLowerCase();
+  let i=hay.indexOf(needle, from);
+  while(i>=0){
+    if(!_isWord(text[i-1]) && !_isWord(text[i+term.length])) return i;
+    i=hay.indexOf(needle, i+1);
+  }
+  return -1;
+}
+// einen Textknoten in Text + <span class="gloss"> aufteilen (je Begriff einmal pro Karte)
+function _annotateNode(node, used){
+  const text=node.nodeValue;
+  let cursor=0, pos=0;
+  const frag=document.createDocumentFragment();
+  while(pos<text.length){
+    let m=null;
+    for(const {text:term,id} of TERM_INDEX){
+      if(used.has(id)) continue;
+      const i=_indexOfWord(text, term, pos);
+      if(i>=0 && (!m || i<m.i)) m={i, len:term.length, id};
+    }
+    if(!m) break;
+    if(m.i>cursor) frag.appendChild(document.createTextNode(text.slice(cursor, m.i)));
+    const span=document.createElement('span');
+    span.className='gloss'; span.dataset.term=m.id; span.tabIndex=0;
+    span.setAttribute('role','button');
+    span.setAttribute('aria-label','Begriff erklären: '+text.slice(m.i, m.i+m.len));
+    span.textContent=text.slice(m.i, m.i+m.len);
+    frag.appendChild(span);
+    used.add(m.id); cursor=m.i+m.len; pos=cursor;
+  }
+  if(cursor===0) return;
+  if(cursor<text.length) frag.appendChild(document.createTextNode(text.slice(cursor)));
+  node.parentNode.replaceChild(frag, node);
+}
+// Begriffe in einem Container markieren (Buttons/Optionen/bereits markiertes auslassen)
+function annotateGlossary(root){
+  if(!root || !TERM_INDEX.length) return;
+  const walker=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {acceptNode(n){
+    if(!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+    for(let p=n.parentElement; p && p!==root.parentElement; p=p.parentElement){
+      if(p.tagName==='BUTTON') return NodeFilter.FILTER_REJECT;
+      if(p.classList && (p.classList.contains('gloss')||p.classList.contains('options'))) return NodeFilter.FILTER_REJECT;
+    }
+    return NodeFilter.FILTER_ACCEPT;
+  }});
+  const nodes=[]; let n; while((n=walker.nextNode())) nodes.push(n);
+  const used=new Set();
+  nodes.forEach(node=>_annotateNode(node, used));
+}
+
+// Inline-Glossar aus den Konzepten speisen (Fallback: statisches HTML bleibt)
+const GLOSSARY_IDS=['zsf','isf','av','uv','nv'];
+function renderGlossary(){
+  const el=document.getElementById('glossary');
+  if(!el || !window.CONCEPTS) return;
+  const items=GLOSSARY_IDS.map(id=>CONCEPTS[id]?{id,c:CONCEPTS[id]}:null).filter(Boolean);
+  if(!items.length) return;
+  el.innerHTML='';
+  for(const {id,c} of items){
+    const abbr=(c.aliases&&c.aliases[0])||c.term;
+    const s=document.createElement('span');
+    s.className='gloss-item'; s.dataset.term=id; s.tabIndex=0; s.setAttribute('role','button');
+    s.innerHTML='<b>'+abbr+'</b> = '+c.term;
+    el.appendChild(s);
+  }
+}
+
+// Popover
+let _glossPop=null;
+function hideGlossPop(){ if(_glossPop){ _glossPop.remove(); _glossPop=null; } }
+function showGlossPop(span){
+  const c=CONCEPTS[span.dataset.term]; if(!c) return;
+  hideGlossPop();
+  const pop=document.createElement('div');
+  pop.className='gloss-pop';
+  pop.innerHTML=(c.category?'<span class="cat">'+c.category+'</span>':'')+
+    '<h4>'+c.term+'</h4><div>'+(c.long||c.short||'')+'</div>';
+  document.body.appendChild(pop);
+  const r=span.getBoundingClientRect();
+  const pw=pop.offsetWidth, ph=pop.offsetHeight;
+  const left=Math.max(12, Math.min(r.left, window.innerWidth-pw-12));
+  let top=r.bottom+8;
+  if(top+ph>window.innerHeight-12) top=Math.max(12, r.top-ph-8);
+  pop.style.left=left+'px'; pop.style.top=top+'px';
+  _glossPop=pop;
+}
+
+// Schalter + Interaktion (sitzungsweise; kein localStorage)
+(function(){
+  const explWrap=document.getElementById('wrap');
+  const toggle=document.getElementById('explainToggle');
+  toggle.addEventListener('click', ()=>{
+    const on=explWrap.classList.toggle('explain-on');
+    toggle.setAttribute('aria-pressed', on?'true':'false');
+    if(!on) hideGlossPop();
+  });
+  function openFrom(target){
+    const item=target.closest && target.closest('.gloss-item');
+    if(item){ showGlossPop(item); return true; }
+    const g=target.closest && target.closest('.gloss');
+    if(g && explWrap.classList.contains('explain-on')){ showGlossPop(g); return true; }
+    return false;
+  }
+  explWrap.addEventListener('click', e=>{ if(openFrom(e.target)){ e.stopPropagation(); } });
+  explWrap.addEventListener('keydown', e=>{
+    const t=e.target;
+    if((e.key==='Enter'||e.key===' ') && t.classList && (t.classList.contains('gloss')||t.classList.contains('gloss-item'))){
+      if(t.classList.contains('gloss') && !explWrap.classList.contains('explain-on')) return;
+      e.preventDefault(); showGlossPop(t);
+    }
+  });
+  document.addEventListener('click', e=>{
+    if(_glossPop && !e.target.closest('.gloss-pop') && !e.target.closest('.gloss') && !e.target.closest('.gloss-item')) hideGlossPop();
+  });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') hideGlossPop(); });
+  window.addEventListener('resize', hideGlossPop);
+  document.addEventListener('scroll', hideGlossPop, true);
+  renderGlossary();
+})();
 
 start('unterschied');
 // nach initialem Layout sicher zentrieren
