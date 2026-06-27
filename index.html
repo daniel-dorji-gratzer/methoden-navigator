@@ -463,12 +463,23 @@
   .gloss-item:hover{color:var(--teal)}
   /* markierte Begriffe im Inhalt – nur im Erklärmodus sichtbar/aktiv */
   .wrap.explain-on .gloss{
-    border-bottom:1px dotted var(--ink-faint);cursor:pointer;
-    transition:color .15s,border-color .15s;
+    color:var(--teal);border-bottom:1px dotted var(--teal);cursor:pointer;
+    transition:color .15s,border-color .15s,background .15s;
   }
   .wrap.explain-on .gloss:hover,.wrap.explain-on .gloss:focus-visible{
-    color:var(--teal);border-bottom-color:var(--teal);outline:none;
+    border-bottom-style:solid;background:rgba(45,212,191,.12);
+    border-radius:3px;outline:none;
   }
+  /* Info-Icon an Auswahloptionen (nur im Erklärmodus) */
+  .opt-info{
+    display:none;flex-shrink:0;width:18px;height:18px;border-radius:50%;
+    align-items:center;justify-content:center;
+    font-family:'Spline Sans Mono',monospace;font-size:.66rem;font-weight:600;line-height:1;
+    border:1px solid var(--teal);color:var(--teal);background:rgba(45,212,191,.12);
+    cursor:pointer;transition:.15s;
+  }
+  .wrap.explain-on .opt .opt-info{display:inline-flex}
+  .opt-info:hover,.opt-info:focus-visible{background:var(--teal);color:#06231f;outline:none}
   .gloss-pop{
     position:fixed;z-index:60;max-width:300px;
     background:rgba(18,38,52,.97);border:1px solid var(--panel-edge);border-radius:12px;
@@ -663,6 +674,15 @@ function renderNode(id){
     const b=document.createElement('button');
     b.className='opt';
     b.innerHTML=`<span class="dot"></span>${o.label}<span class="arrow">→</span>`;
+    const cid=conceptForText(o.label);
+    if(cid){
+      const info=document.createElement('span');
+      info.className='opt-info'; info.dataset.term=cid; info.tabIndex=0;
+      info.setAttribute('role','button');
+      info.setAttribute('aria-label','Erklärung zu: '+o.label);
+      info.textContent='?';
+      b.insertBefore(info, b.querySelector('.arrow'));
+    }
     b.onclick=()=>choose(id, o);
     optWrap.appendChild(b);
   });
@@ -1046,6 +1066,14 @@ function _indexOfWord(text, term, from){
   }
   return -1;
 }
+// bestes (längstes) Konzept, dessen Begriff/Alias als ganzes Wort im Text vorkommt
+function conceptForText(text){
+  let best=null;
+  for(const {text:term,id} of TERM_INDEX){
+    if(_indexOfWord(text, term, 0)>=0 && (!best || term.length>best.len)) best={id, len:term.length};
+  }
+  return best ? best.id : null;
+}
 // einen Textknoten in Text + <span class="gloss"> aufteilen (je Begriff einmal pro Karte)
 function _annotateNode(node, used){
   const text=node.nodeValue;
@@ -1134,23 +1162,26 @@ function showGlossPop(span){
     toggle.setAttribute('aria-pressed', on?'true':'false');
     if(!on) hideGlossPop();
   });
-  function openFrom(target){
-    const item=target.closest && target.closest('.gloss-item');
-    if(item){ showGlossPop(item); return true; }
-    const g=target.closest && target.closest('.gloss');
-    if(g && explWrap.classList.contains('explain-on')){ showGlossPop(g); return true; }
-    return false;
+  // Glossar-Item und Options-Info immer; markierter Inhaltsbegriff nur im Erklärmodus
+  function triggerFrom(target){
+    if(!target.closest) return null;
+    const direct=target.closest('.gloss-item, .opt-info');
+    if(direct) return direct;
+    const g=target.closest('.gloss');
+    return (g && explWrap.classList.contains('explain-on')) ? g : null;
   }
-  explWrap.addEventListener('click', e=>{ if(openFrom(e.target)){ e.stopPropagation(); } });
+  // Capture-Phase: fängt den Klick VOR dem Options-Button ab (verhindert Navigieren)
+  explWrap.addEventListener('click', e=>{
+    const t=triggerFrom(e.target);
+    if(t){ e.preventDefault(); e.stopPropagation(); showGlossPop(t); }
+  }, true);
   explWrap.addEventListener('keydown', e=>{
-    const t=e.target;
-    if((e.key==='Enter'||e.key===' ') && t.classList && (t.classList.contains('gloss')||t.classList.contains('gloss-item'))){
-      if(t.classList.contains('gloss') && !explWrap.classList.contains('explain-on')) return;
-      e.preventDefault(); showGlossPop(t);
-    }
-  });
+    if(e.key!=='Enter' && e.key!==' ') return;
+    const t=triggerFrom(e.target);
+    if(t){ e.preventDefault(); e.stopPropagation(); showGlossPop(t); }
+  }, true);
   document.addEventListener('click', e=>{
-    if(_glossPop && !e.target.closest('.gloss-pop') && !e.target.closest('.gloss') && !e.target.closest('.gloss-item')) hideGlossPop();
+    if(_glossPop && !e.target.closest('.gloss-pop, .gloss, .gloss-item, .opt-info')) hideGlossPop();
   });
   document.addEventListener('keydown', e=>{ if(e.key==='Escape') hideGlossPop(); });
   window.addEventListener('resize', hideGlossPop);

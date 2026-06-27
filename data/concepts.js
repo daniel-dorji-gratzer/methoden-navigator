@@ -121,7 +121,10 @@ window.CONCEPTS = {
   "skalenniveau": {
     "term": "Skalenniveau",
     "aliases": [
-      "nominal/ordinal/metrisch/dichotom",
+      "nominal",
+      "ordinal",
+      "metrisch",
+      "dichotom",
       "level of measurement"
     ],
     "category": "Grundbegriff",
@@ -136,8 +139,7 @@ window.CONCEPTS = {
     "term": "Wide- vs. Long-Format",
     "aliases": [
       "wide/long",
-      "tidy data",
-      "Datenstruktur"
+      "tidy data"
     ],
     "category": "Datenstruktur",
     "short": "Zwei Anordnungen derselben Daten – je nach Verfahren nötig.",
