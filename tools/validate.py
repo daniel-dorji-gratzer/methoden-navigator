@@ -20,6 +20,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REQUIRED_FIELDS = ("name", "why", "check", "how")
+CONCEPT_REQUIRED = ("term", "short", "long")
+CONCEPT_CATEGORIES = {"Grundbegriff", "Voraussetzung", "Datenstruktur", "Konzept"}
 
 
 def load_global(path: Path, varname: str):
@@ -79,8 +81,37 @@ def main() -> int:
         if "warn" in m and not isinstance(m["warn"], bool):
             warnings.append(f"Methode '{key}': 'warn' sollte boolesch sein.")
 
+    # (f) Konzepte/Glossar (optional – nur falls data/concepts.js existiert)
+    concepts_path = ROOT / "data" / "concepts.js"
+    n_concepts = 0
+    if concepts_path.exists():
+        concepts = load_global(concepts_path, "CONCEPTS")
+        n_concepts = len(concepts)
+        alias_seen = {}
+        for key, c in concepts.items():
+            for f in CONCEPT_REQUIRED:
+                if not str(c.get(f, "")).strip():
+                    errors.append(f"Konzept '{key}': Pflichtfeld '{f}' fehlt oder ist leer.")
+            if c.get("category") and c["category"] not in CONCEPT_CATEGORIES:
+                warnings.append(f"Konzept '{key}': unbekannte Kategorie '{c['category']}'.")
+            aliases = c.get("aliases", [])
+            if not isinstance(aliases, list):
+                errors.append(f"Konzept '{key}': 'aliases' muss eine Liste sein.")
+                aliases = []
+            # gleicher Alias in mehreren Konzepten -> mehrdeutige Auto-Markierung
+            for a in [c.get("term", "")] + list(aliases):
+                a = str(a).strip().lower()
+                if not a:
+                    continue
+                if a in alias_seen and alias_seen[a] != key:
+                    warnings.append(
+                        f"Begriff/Alias '{a}' kommt in '{alias_seen[a]}' und '{key}' vor "
+                        f"(mehrdeutig für den Erklärmodus).")
+                else:
+                    alias_seen[a] = key
+
     print(f"Baeume: {len(trees)} | Methoden: {len(methods)} | "
-          f"referenzierte Methoden: {len(referenced)}")
+          f"referenzierte Methoden: {len(referenced)} | Konzepte: {n_concepts}")
     for w in warnings:
         print(f"  WARN  {w}")
     for e in errors:

@@ -34,7 +34,8 @@ Inhalt und Code sind getrennt. Die App-Logik steckt in [index.html](index.html);
 
 - [`data/methods.js`](data/methods.js) – die Verfahren (`window.METHODS`): pro Methode `name`, `why`, `check`, `how`, optional `warn`.
 - [`data/trees.js`](data/trees.js) – die Entscheidungsbäume (`window.TREES`): Knoten, Fragen, Optionen und Sprungziele.
-- [`data/schema.md`](data/schema.md) – die genaue Struktur beider Dateien.
+- [`data/concepts.js`](data/concepts.js) – Glossar/Konzepte (`window.CONCEPTS`): Begriff, Aliases, Kurz-/Langtext (Grundlage für den künftigen Erklärmodus).
+- [`data/schema.md`](data/schema.md) – die genaue Struktur aller Dateien.
 
 Die Dateien sind JavaScript, dessen Inhalt nach dem `=` reines JSON ist. Sie werden per `<script src>` geladen – das funktioniert auf GitHub Pages **und** beim direkten Öffnen von `index.html` über `file://` (kein Server nötig). Die Verbindung zwischen Baum und Methode läuft über die Methoden-ID (z. B. `r_ttest_zsf`).
 
@@ -59,6 +60,7 @@ python3 -m http.server 8000   # dann http://localhost:8000/ öffnen
 ### Werkzeuge
 
 - [`tools/validate.py`](tools/validate.py) – Integritäts-Gate (reine Standardbibliothek).
+- [`tools/build_concepts.py`](tools/build_concepts.py) – erzeugt `data/concepts.js` aus dem Katalog-Blatt „Glossar & Konzepte" (benötigt `openpyxl`). Erster Baustein der Tabelle→Daten-Pipeline.
 - [`tools/migrate_extract.py`](tools/migrate_extract.py) – einmalige Migration der früheren Inline-Daten in die `data/`-Dateien (Reproduzierbarkeit; benötigt macOS `osascript`).
 
 ## Kontext

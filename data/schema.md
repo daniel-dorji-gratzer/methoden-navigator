@@ -47,6 +47,25 @@ Objekt `{ "<hypothesentyp>": { start, nodes }, … }`. Aktuelle Typen:
 | `crumb` | string | ja      | Kurztext für die Pfad-/Breadcrumb-Anzeige. |
 | `go`    | string | ja      | Sprungziel: **Methoden-ID** (beginnt mit `r_` oder existiert in `METHODS`) **oder** ID eines weiteren Knotens im selben Baum. |
 
+## `data/concepts.js` — `window.CONCEPTS`
+
+Glossar-/Konzepteinträge für Erklärungen und den späteren Erklärmodus. Objekt
+`{ "<begriff-id>": { …Felder… }, … }`. Erzeugt aus dem Katalog-Blatt
+„Glossar & Konzepte" via `tools/build_concepts.py`.
+
+| Feld       | Typ      | Pflicht | Bedeutung |
+|------------|----------|---------|-----------|
+| `term`     | string   | ja      | Anzeigename des Begriffs (z. B. „Normalverteilung"). |
+| `aliases`  | string[] | nein    | Weitere Schreibweisen/Abkürzungen (z. B. `["NV","Normality"]`), die der Erklärmodus zusätzlich automatisch markiert. |
+| `category` | string   | nein    | `Grundbegriff` / `Voraussetzung` / `Datenstruktur` / `Konzept`. |
+| `short`    | string   | ja      | Einzeiler für Tooltip/Glossar. |
+| `long`     | string   | ja      | Ausführliche Erklärung fürs Popup. HTML erlaubt. |
+| `related`  | string[] | nein    | Verknüpfte Methoden-/Knoten-IDs oder Hinweise (informativ). |
+| `status`   | string   | nein    | Redaktionsstand (z. B. `Entwurf`, `Freigegeben`). |
+
+> Noch ohne eigene UI geladen (`window.CONCEPTS` steht bereit); der Erklärmodus
+> (folgende Stufe) baut darauf auf.
+
 ## Integritätsregeln (siehe `tools/validate.py`)
 
 1. Jedes `go`, das eine Methode ist, hat einen Eintrag in `methods.js`.
@@ -54,6 +73,7 @@ Objekt `{ "<hypothesentyp>": { start, nodes }, … }`. Aktuelle Typen:
 3. Keine verwaiste Methode (jede wird von mindestens einem Baum referenziert).
 4. Jede Methode hat die Pflichtfelder `name`, `why`, `check`, `how`.
 5. Der `start`-Knoten jedes Baums existiert.
+6. Jedes Konzept hat die Pflichtfelder `term`, `short`, `long`; gleiche Begriffe/Aliases in mehreren Konzepten werden als mehrdeutig gewarnt.
 
 `python3 tools/validate.py` muss fehlerfrei durchlaufen, bevor Änderungen
 veröffentlicht werden.
