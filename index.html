@@ -81,9 +81,9 @@
         linear-gradient(180deg,var(--bg2),var(--bg));
       box-shadow:var(--shadow);
     }
-    /* nach dem Start: Header weg → Karte rückt ganz nach oben, füllt den Viewport */
-    .wrap.started{padding-top:0}
-    .wrap.started .canvasArea{margin-top:0;border-radius:0}
+    /* nach dem Start: Header weg → Karte füllt randlos den ganzen Viewport */
+    .wrap.started{padding:0}
+    .wrap.started .canvasArea{margin-top:0;border-radius:0;border:0;box-shadow:none}
     footer{display:none}
     /* scroll-/zoombarer Baum-Canvas */
     .mapStage{
@@ -342,6 +342,69 @@
   .legal-link,.legal-link:visited{color:var(--ink-faint);text-decoration:underline;text-underline-offset:2px}
   .legal-link:hover{color:var(--teal)}
 
+  /* ===== Vollbild-Startbildschirm ===== */
+  #welcome{
+    position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(90,169,230,.10) 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(45,212,191,.08) 0%, transparent 55%),
+      var(--bg);
+    opacity:1;transition:opacity .45s ease;
+  }
+  #welcome.hide{opacity:0;pointer-events:none}
+  /* obere Leiste (Platz für späteres Login/Nutzerstatus) */
+  .wel-bar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:20px 26px;min-height:64px;flex:0 0 auto;
+  }
+  .wel-logo{font-family:'Fraunces',serif;font-weight:600;font-size:1.12rem;letter-spacing:-.01em}
+  .wel-logo em{font-style:italic;color:var(--amber)}
+  .wel-bar-right{min-width:1px}
+  /* zentrierter Hero */
+  .wel-main{
+    flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:10px 22px 64px;
+  }
+  .wel-kicker{
+    font-family:'Spline Sans Mono',monospace;font-size:.72rem;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--teal);margin-bottom:14px;
+  }
+  .wel-h1{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:clamp(2rem,5.5vw,3rem);line-height:1.03;letter-spacing:-.02em;
+  }
+  .wel-h1 em{font-style:italic;color:var(--amber)}
+  .wel-sub{color:var(--ink-soft);margin-top:14px;max-width:48ch;font-size:.98rem}
+  .wel-pick{
+    font-family:'Spline Sans Mono',monospace;font-size:.74rem;letter-spacing:.05em;
+    color:var(--ink-faint);margin:30px 0 16px;
+  }
+  .wel-cards{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;
+    width:100%;max-width:780px;
+  }
+  .wel-card{
+    position:relative;text-align:left;cursor:pointer;font-family:inherit;
+    background:var(--panel);border:1px solid var(--panel-edge);border-radius:16px;
+    padding:20px 20px 22px;transition:transform .18s ease,border-color .18s ease,background .18s ease;
+  }
+  .wel-card:hover{border-color:var(--teal);background:#1a3245;transform:translateY(-3px)}
+  .wel-card:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+  .wel-card h3{font-family:'Spline Sans',sans-serif;font-size:1.02rem;font-weight:600;color:var(--ink);margin-bottom:6px}
+  .wel-card p{color:var(--ink-soft);font-size:.82rem;line-height:1.5;margin:0;max-width:24ch}
+  .wel-tag{
+    display:inline-block;font-family:'Spline Sans Mono',monospace;font-size:.62rem;
+    letter-spacing:.1em;color:var(--teal);background:rgba(45,212,191,.12);
+    border-radius:6px;padding:3px 8px;margin-bottom:14px;
+  }
+  .wel-arrow{position:absolute;top:18px;right:18px;color:var(--ink-faint);font-size:1.1rem;transition:.18s}
+  .wel-card:hover .wel-arrow{color:var(--teal);transform:translateX(2px)}
+  @media (max-width:720px){
+    .wel-cards{grid-template-columns:1fr;max-width:420px}
+    .wel-card p{max-width:none}
+    .wel-main{padding:6px 20px 48px}
+  }
+
   /* ===== Onboarding-Kollaps: großer Header weicht Panel-Kopfzeile ===== */
   #bigHeader, #bigModes{
     transition:opacity .4s ease, max-height .45s ease, margin .45s ease, transform .4s ease;
@@ -403,6 +466,39 @@
 </style>
 </head>
 <body>
+<!-- Vollbild-Startbildschirm: Moduswahl als Einstieg; obere Leiste reserviert für späteres Login -->
+<div id="welcome">
+  <div class="wel-bar">
+    <div class="wel-logo">Methoden-<em>Navigator</em></div>
+    <div class="wel-bar-right"></div>
+  </div>
+  <main class="wel-main">
+    <div class="wel-kicker">Forschungsmethoden · Testauswahl</div>
+    <h1 class="wel-h1">Finde das passende <em>Verfahren</em></h1>
+    <p class="wel-sub">Beantworte die Fragen Schritt für Schritt. Der Pfad baut sich mit – am Ziel steht das passende Verfahren samt Begründung. Kein Auswendiglernen, sondern Entscheiden.</p>
+    <div class="wel-pick">Womit möchtest du beginnen?</div>
+    <div class="wel-cards">
+      <button class="wel-card" data-root="unterschied">
+        <span class="wel-arrow">→</span>
+        <span class="wel-tag">UNTERSCHIEDE</span>
+        <h3>Unterschiedshypothesen</h3>
+        <p>Verfahren zum Vergleich von Gruppen oder Messungen</p>
+      </button>
+      <button class="wel-card" data-root="zusammenhang">
+        <span class="wel-arrow">→</span>
+        <span class="wel-tag">ZUSAMMENHANG</span>
+        <h3>Zusammenhangshypothesen</h3>
+        <p>Korrelationen und Regressionen zwischen Variablen</p>
+      </button>
+      <button class="wel-card" data-root="moderation">
+        <span class="wel-arrow">→</span>
+        <span class="wel-tag">MODERATION</span>
+        <h3>Moderationshypothesen</h3>
+        <p>Einfluss einer dritten Variable auf einen Effekt</p>
+      </button>
+    </div>
+  </main>
+</div>
 <div class="wrap" id="wrap">
   <header id="bigHeader">
     <div class="kicker">Forschungsmethoden · Testauswahl</div>
@@ -1080,6 +1176,18 @@ function setMode(root){
 }
 document.querySelectorAll('.mode-btn, .seg-btn').forEach(btn=>{
   btn.addEventListener('click',()=>setMode(btn.dataset.root));
+});
+
+/* Vom Startbildschirm in die App: Modus wählen → Karte aufbauen → Welcome ausblenden */
+function enterApp(root){
+  setMode(root);
+  markStarted();
+  const w=document.getElementById('welcome');
+  w.classList.add('hide');
+  setTimeout(()=>{ w.style.display='none'; centerOnCurrent(false); }, 460);
+}
+document.querySelectorAll('.wel-card').forEach(card=>{
+  card.addEventListener('click',()=>enterApp(card.dataset.root));
 });
 
 /* Info-Button im Panelkopf blendet die Kurzbeschreibung ein/aus */
