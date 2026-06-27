@@ -24,7 +24,9 @@ Die Fragen folgen den klassischen Entscheidungskriterien: Stichprobenart (unabh�
 
 ## Technik
 
-Eine einzige HTML-Datei ([index.html](index.html)) ohne Build-Schritt und ohne Abhängigkeiten (nur Webfonts von Google Fonts). Lokal nutzbar durch einfaches Öffnen der Datei im Browser.
+[index.html](index.html) ohne Build-Schritt und **ohne externe Abhängigkeiten**. Die Schriften (Fraunces, Spline Sans, Spline Sans Mono) werden selbst gehostet im Ordner [fonts/](fonts/) ausgeliefert – es gibt **keine Anfragen an Google-Server**, daher keine Übertragung von Besucher-IP-Adressen an Dritte (DSGVO-konform). Lokal nutzbar durch einfaches Öffnen der Datei im Browser.
+
+Die Schriften stammen von Google Fonts und stehen unter der [SIL Open Font License 1.1](https://openfontlicense.org/).
 
 ## Kontext
 
