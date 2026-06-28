@@ -204,6 +204,25 @@ window.METHODS = {
     "check": "Mediation (Mechanismus: UV→M→AV) ist von Moderation (Bedingung: Effekt variiert je nach Moderator) zu unterscheiden – häufige Verwechslung.",
     "how": "Die Mediationsanalyse zerlegt den Gesamteffekt einer UV auf die AV in einen <b>direkten</b> Pfad und einen <b>indirekten</b> Pfad über einen Mediator (UV → M → AV) und prüft so, ob der Effekt ganz oder teilweise über diese Zwischenvariable vermittelt wird. Den Indirekteffekt schätzt die moderne Praxis über <b>bootstrap-basierte Konfidenzintervalle</b> statt über den älteren Sobel-Test. Sie steht hier, wenn ein vermittelnder Mechanismus geprüft werden soll. Wichtig ist die Abgrenzung zur Moderation: Mediation fragt nach dem Mechanismus (wie/warum), Moderation nach der Bedingung (für wen/wann der Effekt variiert)."
   },
+  "r_kaplanmeier": {
+    "name": "Kaplan-Meier-Schätzer",
+    "why": "Deskriptive Schätzung der Überlebensfunktion über die Zeit, wenn für manche Fälle der Endpunkt nicht erreicht ist (Zensierung) – Grundbaustein der Survival-Analyse.",
+    "check": "Für den Vergleich von Überlebenskurven zwischen Gruppen → Log-Rank-Test. Für Prädiktoreffekte → Cox-Regression.",
+    "how": "Der Kaplan-Meier-Schätzer berechnet die <b>Überlebensfunktion</b> als Treppenkurve: An jedem Ereigniszeitpunkt wird der Anteil der weiterhin „Überlebenden“ aktualisiert, wobei <b>zensierte</b> Fälle (Endpunkt nicht beobachtet) korrekt nur bis zu ihrem Ausscheiden zählen. So nutzt er auch unvollständige Verläufe, statt sie zu verwerfen. Er steht hier als deskriptiver Grundbaustein der Survival-Analyse, wenn die AV eine Zeit bis zum Ereignis ist. Für den Vergleich von Überlebenskurven zwischen Gruppen folgt der Log-Rank-Test, für Prädiktoreffekte die Cox-Regression."
+  },
+  "r_logrank": {
+    "name": "Log-Rank-Test",
+    "why": "Vergleicht die Überlebenskurven von zwei oder mehr Gruppen auf Gleichheit – das Survival-Pendant zum Gruppenvergleich.",
+    "check": "Beschreibt Unterschiede, ohne Prädiktoren zu quantifizieren. Für adjustierte Effekte/Kovariaten → Cox-Regression.",
+    "how": "Der Log-Rank-Test vergleicht <b>Überlebenskurven</b> mehrerer Gruppen, indem er an jedem Ereigniszeitpunkt die beobachtete mit der unter Gleichheit erwarteten Ereigniszahl je Gruppe vergleicht und diese Differenzen über die Zeit aufsummiert. Er ist damit das Survival-Pendant zum Gruppenvergleich und berücksichtigt Zensierung. Er steht hier, wenn zwei oder mehr Gruppen hinsichtlich ihres Überlebensverlaufs verglichen werden sollen. Er sagt nur, <b>ob</b> sich die Kurven unterscheiden – für adjustierte Effekte oder Kovariaten ist die Cox-Regression nötig."
+  },
+  "r_cox": {
+    "name": "Cox-Regression (Proportional Hazards)",
+    "why": "Modelliert den Einfluss mehrerer Prädiktoren auf die Hazard-Rate (Ereignisrisiko über die Zeit), mit Zensierung – das Regressionsmodell der Survival-Analyse.",
+    "check": "Setzt proportionale Hazards voraus; bei Verletzung sind zeitabhängige Kovariaten oder erweiterte Modelle nötig.",
+    "how": "Die Cox-Regression modelliert die <b>Hazard-Rate</b> (das momentane Ereignisrisiko über die Zeit) als Produkt aus einer unspezifizierten Basis-Hazard und dem Einfluss der Prädiktoren; deren Koeffizienten lassen sich als <b>Hazard Ratios</b> deuten. Weil die Form der Basis-Hazard offenbleibt, ist sie flexibel und nutzt zensierte Daten. Sie steht hier, wenn mehrere Prädiktoren gleichzeitig auf eine Zeit-bis-Ereignis-AV bezogen werden sollen – das Regressionsmodell der Survival-Analyse. Sie setzt <b>proportionale Hazards</b> voraus; ist diese Annahme verletzt, braucht es zeitabhängige Kovariaten oder erweiterte Modelle.",
+    "warn": true
+  },
   "r_ttest_1s": {
     "name": "Einstichproben-t-Test",
     "why": "Metrische Variable aus einer einzigen Stichprobe, die gegen einen theoretisch erwarteten Mittelwert μ₀ geprüft wird (z. B. Testwert gegen Normwert) – bei normalverteilten Daten ist das der Einstichproben-t-Test.",

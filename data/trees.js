@@ -631,5 +631,32 @@ window.TREES = {
         ]
       }
     }
+  },
+  "survival": {
+    "start": "surv_start",
+    "nodes": {
+      "surv_start": {
+        "tag": "Fragestellung",
+        "q": "Du hast Zeit-bis-Ereignis-Daten (mit Zensierung) – was ist dein Ziel?",
+        "hint": "Survival-Analyse: Ergebnis ist die Zeit bis zu einem Ereignis; für manche Fälle ist der Endpunkt nicht beobachtet (Zensierung).",
+        "opts": [
+          {
+            "label": "Den Überlebensverlauf beschreiben/schätzen",
+            "crumb": "Verlauf schätzen",
+            "go": "r_kaplanmeier"
+          },
+          {
+            "label": "Überlebenskurven zwischen Gruppen vergleichen",
+            "crumb": "Gruppen vergleichen",
+            "go": "r_logrank"
+          },
+          {
+            "label": "Einfluss mehrerer Prädiktoren auf das Risiko modellieren",
+            "crumb": "Prädiktoren",
+            "go": "r_cox"
+          }
+        ]
+      }
+    }
   }
 };

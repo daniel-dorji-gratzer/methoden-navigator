@@ -33,5 +33,13 @@ window.ROOTS = [
     "label": "Mediationshypothesen",
     "desc": "Wirkung über eine vermittelnde dritte Variable (Mechanismus)",
     "icon": "<svg viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"2.4\"/><line x1=\"3\" y1=\"11\" x2=\"8\" y2=\"11\"/><line x1=\"14\" y1=\"11\" x2=\"19\" y2=\"11\"/><path d=\"M16.5 9l2 2-2 2\"/></svg>"
+  },
+  {
+    "id": "survival",
+    "title": "Survival",
+    "short": "Survival",
+    "label": "Survival-Analyse",
+    "desc": "Zeit bis zu einem Ereignis (mit Zensierung) – häufig in der Medizin",
+    "icon": "<svg viewBox=\"0 0 22 22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 5h5v5h5v5h6\"/></svg>"
   }
 ];
