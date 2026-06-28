@@ -615,10 +615,12 @@
   <footer>Daten nach dem Entscheidungsbaum (Forschungsmethoden WS25, WEBER)<br><a class="legal-link" href="rechtliches.html">Impressum &amp; Datenschutz</a></footer>
 </div>
 
-<script src="data/roots.js"></script>
-<script src="data/trees.js"></script>
-<script src="data/methods.js"></script>
-<script src="data/concepts.js"></script>
+<!-- ?v=… ist eine Cache-Bremse: bei JEDER Datenänderung in data/ hochzählen,
+     damit Browser nicht die alte Version aus dem Cache laden. -->
+<script src="data/roots.js?v=20260628a"></script>
+<script src="data/trees.js?v=20260628a"></script>
+<script src="data/methods.js?v=20260628a"></script>
+<script src="data/concepts.js?v=20260628a"></script>
 <script>
   /* Inhaltsdaten ausgelagert: window.TREES (data/trees.js) und window.METHODS (data/methods.js). Schema: data/schema.md */
 

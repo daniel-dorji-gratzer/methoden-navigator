@@ -42,6 +42,12 @@ Die Dateien sind JavaScript, dessen Inhalt nach dem `=` reines JSON ist. Sie wer
 
 > Die Datendateien sind **maschinell erzeugt** und sollten nicht von Hand editiert werden, solange der Methoden-Katalog (Tabelle) die Quelle der Wahrheit ist. Künftig erzeugt ein Build die `data/`-Dateien aus der Tabelle (nächster Ausbauschritt).
 
+### Cache-Bremse nicht vergessen
+
+Die `data/*.js` werden in `index.html` mit `?v=…` geladen. Bei **jeder Änderung
+an den Datendateien** diese Versionskennung in `index.html` hochzählen – sonst
+laden Browser bis zu 10 Minuten die alte Version aus dem Cache.
+
 ### Vor dem Veröffentlichen prüfen
 
 ```bash
