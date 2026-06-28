@@ -120,7 +120,7 @@ def main() -> int:
         for rid in manifest_ids:
             if rid not in trees:
                 errors.append(f"Manifest: Typ '{rid}' hat keinen Baum in trees.js.")
-            for f in ("id", "tag", "label", "short", "desc"):
+            for f in ("id", "title", "short", "desc", "icon"):
                 if not str(next((r for r in roots if r.get('id') == rid), {}).get(f, "")).strip():
                     errors.append(f"Manifest '{rid}': Feld '{f}' fehlt oder ist leer.")
         for tid in trees:

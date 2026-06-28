@@ -357,13 +357,19 @@
     display:flex;align-items:center;justify-content:space-between;
     padding:20px 26px;min-height:64px;flex:0 0 auto;
   }
-  .wel-logo{font-family:'Fraunces',serif;font-weight:600;font-size:1.12rem;letter-spacing:-.01em}
+  .wel-brand{display:flex;align-items:center;gap:14px;min-width:0}
+  .wel-logo{font-family:'Fraunces',serif;font-weight:600;font-size:1.12rem;letter-spacing:-.01em;white-space:nowrap}
   .wel-logo em{font-style:italic;color:var(--amber)}
+  .wel-claim{
+    font-family:'Spline Sans Mono',monospace;font-size:.7rem;color:var(--ink-faint);
+    border-left:1px solid var(--panel-edge);padding-left:14px;white-space:nowrap;
+  }
   .wel-bar-right{min-width:1px}
+  @media (max-width:720px){ .wel-claim{display:none} }
   /* zentrierter Hero */
   .wel-main{
     flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    text-align:center;padding:10px 22px 64px;
+    text-align:center;padding:24px 22px;
   }
   .wel-kicker{
     font-family:'Spline Sans Mono',monospace;font-size:.72rem;letter-spacing:.28em;
@@ -384,22 +390,24 @@
     width:100%;max-width:880px;
   }
   .wel-card{
-    position:relative;text-align:left;cursor:pointer;font-family:inherit;
+    text-align:left;cursor:pointer;font-family:inherit;
     background:var(--panel);border:1px solid var(--panel-edge);border-radius:16px;
-    padding:20px 20px 22px;transition:transform .18s ease,border-color .18s ease,background .18s ease;
+    padding:18px 18px 20px;transition:transform .18s ease,border-color .18s ease,background .18s ease;
+    opacity:0;animation:welIn .5s ease forwards;
   }
+  @keyframes welIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   .wel-card:hover{border-color:var(--teal);background:#1a3245;transform:translateY(-3px)}
   .wel-card:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
-  .wel-card h3{font-family:'Spline Sans',sans-serif;font-size:1.02rem;font-weight:600;color:var(--ink);margin-bottom:6px;
-    overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
-  .wel-card p{color:var(--ink-soft);font-size:.82rem;line-height:1.5;margin:0;max-width:24ch}
-  .wel-tag{
-    display:inline-block;font-family:'Spline Sans Mono',monospace;font-size:.62rem;
-    letter-spacing:.1em;color:var(--teal);background:rgba(45,212,191,.12);
-    border-radius:6px;padding:3px 8px;margin-bottom:14px;
+  .wel-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .wel-ic{
+    width:38px;height:38px;border-radius:11px;flex-shrink:0;color:var(--teal);
+    background:rgba(45,212,191,.12);display:flex;align-items:center;justify-content:center;
   }
-  .wel-arrow{position:absolute;top:18px;right:18px;color:var(--ink-faint);font-size:1.1rem;transition:.18s}
-  .wel-card:hover .wel-arrow{color:var(--teal);transform:translateX(2px)}
+  .wel-ic svg{width:20px;height:20px}
+  .wel-card h3{font-family:'Spline Sans',sans-serif;font-size:1.06rem;font-weight:600;color:var(--ink);margin-bottom:6px;overflow-wrap:break-word}
+  .wel-card p{color:var(--ink-soft);font-size:.82rem;line-height:1.5;margin:0;max-width:26ch}
+  .wel-arrow{color:var(--ink-faint);font-size:1.1rem;opacity:.55;transition:.18s}
+  .wel-card:hover .wel-arrow{color:var(--teal);opacity:1;transform:translateX(3px)}
   .wel-foot{
     margin-top:28px;text-align:center;
     font-family:'Spline Sans Mono',monospace;font-size:.72rem;color:var(--ink-faint);
@@ -510,6 +518,13 @@
   .mode-select:hover{border-color:var(--teal)}
   .mode-select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 1px rgba(45,212,191,.3)}
   .mode-select option{background:var(--panel);color:var(--ink)}
+  .mode-row{display:flex;align-items:center;gap:9px}
+  .mode-row .mode-select{flex:1 1 auto;min-width:0}
+  .mode-icon{flex-shrink:0;width:24px;height:24px;color:var(--teal);display:flex;align-items:center;justify-content:center}
+  .mode-icon svg{width:21px;height:21px}
+  /* Typ-Icon in der Ergebnis-Karte */
+  .res-typeicon{display:inline-flex;vertical-align:-3px;width:16px;height:16px;color:var(--green);margin-right:7px}
+  .res-typeicon svg{width:16px;height:16px}
   .panel-desc{
     max-height:0;opacity:0;overflow:hidden;margin:0;
     font-size:.86rem;color:var(--ink-soft);line-height:1.5;
@@ -522,7 +537,10 @@
 <!-- Vollbild-Startbildschirm: Moduswahl als Einstieg; obere Leiste reserviert für späteres Login -->
 <div id="welcome">
   <div class="wel-bar">
-    <div class="wel-logo">Methoden-<em>Navigator</em></div>
+    <div class="wel-brand">
+      <div class="wel-logo">Methoden-<em>Navigator</em></div>
+      <span class="wel-claim">Statistische Verfahren finden – Schritt für Schritt</span>
+    </div>
     <div class="wel-bar-right"></div>
   </div>
   <main class="wel-main">
@@ -577,7 +595,10 @@
               <button class="pt-info" id="infoBtn" title="Worum geht's?">?</button>
             </div>
           </div>
-          <select class="mode-select" id="modeSelect" aria-label="Hypothesentyp wechseln"><!-- aus window.ROOTS generiert --></select>
+          <div class="mode-row">
+            <span class="mode-icon" id="modeIcon" aria-hidden="true"></span>
+            <select class="mode-select" id="modeSelect" aria-label="Hypothesentyp wechseln"><!-- aus window.ROOTS generiert --></select>
+          </div>
           <p class="panel-desc" id="panelDesc">Beantworte die Fragen Schritt für Schritt. Der Pfad baut sich mit – am Ziel steht das passende Verfahren samt Begründung.</p>
         </div>
         <div class="path" id="path"></div>
@@ -680,8 +701,9 @@ function renderResult(resId){
   stage.innerHTML='';
   const card=document.createElement('div');
   card.className='card result';
+  const _rdef=(window.ROOTS||[]).find(x=>x.id===currentRoot);
   card.innerHTML=`
-    <div class="node-tag">Empfohlenes Verfahren</div>
+    <div class="node-tag">${_rdef?'<span class="res-typeicon">'+_rdef.icon+'</span>':''}Empfohlenes Verfahren</div>
     <div class="test-name${r.warn?' warn':''}">${r.name}</div>
     <div class="why${r.warn?' warn':''}"><b>Warum?</b> ${r.why}</div>
     <div class="howbox">
@@ -756,16 +778,18 @@ function start(root){
 /* Hypothesentypen aus dem Manifest (data/roots.js) */
 const ROOTS = window.ROOTS || [];
 
-/* Welcome-Karten aus dem Manifest generieren */
+/* Welcome-Karten aus dem Manifest generieren (Icon, Kurztitel, gestaffelte Einblendung) */
 function renderWelcomeCards(){
   const host=document.getElementById('welCards');
   if(!host || !ROOTS.length) return;
   host.innerHTML='';
-  ROOTS.forEach(r=>{
+  ROOTS.forEach((r,i)=>{
     const b=document.createElement('button');
     b.className='wel-card'; b.dataset.root=r.id;
-    b.innerHTML=`<span class="wel-arrow">→</span><span class="wel-tag">${r.tag}</span>`+
-                `<h3>${r.label}</h3><p>${r.desc}</p>`;
+    b.style.animationDelay=(i*70)+'ms';
+    b.innerHTML=`<div class="wel-card-top"><span class="wel-ic">${r.icon||''}</span>`+
+                `<span class="wel-arrow">→</span></div>`+
+                `<h3>${r.title}</h3><p>${r.desc}</p>`;
     b.addEventListener('click',()=>enterApp(r.id));
     host.appendChild(b);
   });
@@ -780,12 +804,21 @@ function renderModeSelect(){
     sel.appendChild(o);
   });
   sel.addEventListener('change',()=>setMode(sel.value));
+  updateModeIcon(ROOTS[0].id);
+}
+/* aktives Typ-Icon im Panelkopf */
+function updateModeIcon(root){
+  const el=document.getElementById('modeIcon');
+  if(!el) return;
+  const def=ROOTS.find(r=>r.id===root);
+  el.innerHTML=def ? def.icon : '';
 }
 
-/* Hypothesentyp umschalten – hält das Dropdown synchron */
+/* Hypothesentyp umschalten – hält Dropdown und Icon synchron */
 function setMode(root){
   const sel=document.getElementById('modeSelect');
   if(sel) sel.value=root;
+  updateModeIcon(root);
   start(root);
 }
 
