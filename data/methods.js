@@ -198,6 +198,12 @@ window.METHODS = {
     "check": "Die Verfahrensfamilie richtet sich nach dem AV-Niveau wie auf der Zusammenhangsseite; ergänzt wird jeweils der Interaktionsterm UV×Moderator.",
     "how": "Ist die AV nicht metrisch, verschiebt sich die Moderation in die Familie der <b>logistischen bzw. loglinearen Modelle</b>: Man wählt – wie auf der Zusammenhangsseite – das zum AV-Niveau passende Verfahren (binär-, multinomial- oder ordinal-logistisch) und nimmt zusätzlich einen <b>Interaktionsterm UV×Moderator</b> auf. Ein signifikanter Interaktionsterm zeigt, dass der Einfluss der UV auf die (Log-)Odds der AV vom Moderator abhängt. Sie steht hier als Sammelknoten für alle nicht-metrischen AV; das konkrete Verfahren richtet sich nach Dichotomie/Nominal-/Ordinalniveau der AV."
   },
+  "r_mediation": {
+    "name": "Mediationsanalyse",
+    "why": "Prüft, ob der Effekt einer UV auf die AV (teilweise) über eine dritte Variable (Mediator) vermittelt wird – moderne Praxis nutzt bootstrap-basierte Konfidenzintervalle des Indirekteffekts.",
+    "check": "Mediation (Mechanismus: UV→M→AV) ist von Moderation (Bedingung: Effekt variiert je nach Moderator) zu unterscheiden – häufige Verwechslung.",
+    "how": "Die Mediationsanalyse zerlegt den Gesamteffekt einer UV auf die AV in einen <b>direkten</b> Pfad und einen <b>indirekten</b> Pfad über einen Mediator (UV → M → AV) und prüft so, ob der Effekt ganz oder teilweise über diese Zwischenvariable vermittelt wird. Den Indirekteffekt schätzt die moderne Praxis über <b>bootstrap-basierte Konfidenzintervalle</b> statt über den älteren Sobel-Test. Sie steht hier, wenn ein vermittelnder Mechanismus geprüft werden soll. Wichtig ist die Abgrenzung zur Moderation: Mediation fragt nach dem Mechanismus (wie/warum), Moderation nach der Bedingung (für wen/wann der Effekt variiert)."
+  },
   "r_ttest_1s": {
     "name": "Einstichproben-t-Test",
     "why": "Metrische Variable aus einer einzigen Stichprobe, die gegen einen theoretisch erwarteten Mittelwert μ₀ geprüft wird (z. B. Testwert gegen Normwert) – bei normalverteilten Daten ist das der Einstichproben-t-Test.",

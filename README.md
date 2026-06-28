@@ -34,7 +34,8 @@ Inhalt und Code sind getrennt. Die App-Logik steckt in [index.html](index.html);
 
 - [`data/methods.js`](data/methods.js) – die Verfahren (`window.METHODS`): pro Methode `name`, `why`, `check`, `how`, optional `warn`.
 - [`data/trees.js`](data/trees.js) – die Entscheidungsbäume (`window.TREES`): Knoten, Fragen, Optionen und Sprungziele.
-- [`data/concepts.js`](data/concepts.js) – Glossar/Konzepte (`window.CONCEPTS`): Begriff, Aliases, Kurz-/Langtext (Grundlage für den künftigen Erklärmodus).
+- [`data/concepts.js`](data/concepts.js) – Glossar/Konzepte (`window.CONCEPTS`): Begriff, Aliases, Kurz-/Langtext (Erklärmodus).
+- [`data/roots.js`](data/roots.js) – Hypothesentypen-Manifest (`window.ROOTS`): Reihenfolge und Texte der Einstiege; daraus werden Welcome-Karten und Umschalter generiert. Jede `id` braucht einen Baum in `trees.js`.
 - [`data/schema.md`](data/schema.md) – die genaue Struktur aller Dateien.
 
 Die Dateien sind JavaScript, dessen Inhalt nach dem `=` reines JSON ist. Sie werden per `<script src>` geladen – das funktioniert auf GitHub Pages **und** beim direkten Öffnen von `index.html` über `file://` (kein Server nötig). Die Verbindung zwischen Baum und Methode läuft über die Methoden-ID (z. B. `r_ttest_zsf`).

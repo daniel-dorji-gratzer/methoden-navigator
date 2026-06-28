@@ -614,5 +614,22 @@ window.TREES = {
         ]
       }
     }
+  },
+  "mediation": {
+    "start": "med_start",
+    "nodes": {
+      "med_start": {
+        "tag": "Mediationshypothese",
+        "q": "Prüfst du, ob der Effekt der UV auf die AV über einen Mediator vermittelt wird?",
+        "hint": "Mechanismus UV → Mediator → AV. Abzugrenzen von Moderation (der Effekt variiert je nach dritter Variable).",
+        "opts": [
+          {
+            "label": "Ja – den indirekten Effekt (Mechanismus) prüfen",
+            "crumb": "Mediation",
+            "go": "r_mediation"
+          }
+        ]
+      }
+    }
   }
 };

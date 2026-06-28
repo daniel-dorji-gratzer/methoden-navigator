@@ -110,8 +110,26 @@ def main() -> int:
                 else:
                     alias_seen[a] = key
 
+    # (g) Hypothesentypen-Manifest (optional – falls data/roots.js existiert)
+    roots_path = ROOT / "data" / "roots.js"
+    n_roots = 0
+    if roots_path.exists():
+        roots = load_global(roots_path, "ROOTS")
+        n_roots = len(roots)
+        manifest_ids = [r.get("id") for r in roots]
+        for rid in manifest_ids:
+            if rid not in trees:
+                errors.append(f"Manifest: Typ '{rid}' hat keinen Baum in trees.js.")
+            for f in ("id", "tag", "label", "short", "desc"):
+                if not str(next((r for r in roots if r.get('id') == rid), {}).get(f, "")).strip():
+                    errors.append(f"Manifest '{rid}': Feld '{f}' fehlt oder ist leer.")
+        for tid in trees:
+            if tid not in manifest_ids:
+                warnings.append(f"Baum '{tid}' fehlt im Manifest (kein Einstieg in der App).")
+
     print(f"Baeume: {len(trees)} | Methoden: {len(methods)} | "
-          f"referenzierte Methoden: {len(referenced)} | Konzepte: {n_concepts}")
+          f"referenzierte Methoden: {len(referenced)} | Konzepte: {n_concepts} | "
+          f"Hypothesentypen: {n_roots}")
     for w in warnings:
         print(f"  WARN  {w}")
     for e in errors:

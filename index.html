@@ -380,8 +380,8 @@
     color:var(--ink-faint);margin:30px 0 16px;
   }
   .wel-cards{
-    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;
-    width:100%;max-width:780px;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;
+    width:100%;max-width:880px;
   }
   .wel-card{
     position:relative;text-align:left;cursor:pointer;font-family:inherit;
@@ -496,22 +496,19 @@
     margin-bottom:7px;letter-spacing:-.01em;
   }
 
-  /* Segmented-Toggle */
-  .seg{
-    display:flex;gap:3px;padding:3px;border-radius:11px;
-    background:var(--bg);border:1px solid var(--panel-edge);
+  /* Hypothesentyp-Umschalter (Dropdown) */
+  .mode-select{
+    width:100%;cursor:pointer;
+    padding:9px 34px 9px 12px;border-radius:10px;
+    background:var(--bg);border:1px solid var(--panel-edge);color:var(--ink);
+    font-family:inherit;font-size:.84rem;font-weight:600;transition:.16s;
+    -webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' fill='none' stroke='%239fbccf' stroke-width='1.6'/></svg>");
+    background-repeat:no-repeat;background-position:right 12px center;
   }
-  .seg-btn{
-    flex:1;padding:8px 4px;border-radius:8px;cursor:pointer;
-    background:transparent;border:0;color:var(--ink-soft);
-    font-family:inherit;font-size:.78rem;font-weight:600;transition:.16s;
-    white-space:nowrap;
-  }
-  .seg-btn:hover{color:var(--ink)}
-  .seg-btn.active{
-    background:linear-gradient(180deg,#1c3a4f,#16293a);color:var(--teal);
-    box-shadow:inset 0 0 0 1px rgba(45,212,191,.3);
-  }
+  .mode-select:hover{border-color:var(--teal)}
+  .mode-select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 1px rgba(45,212,191,.3)}
+  .mode-select option{background:var(--panel);color:var(--ink)}
   .panel-desc{
     max-height:0;opacity:0;overflow:hidden;margin:0;
     font-size:.86rem;color:var(--ink-soft);line-height:1.5;
@@ -532,26 +529,7 @@
     <h1 class="wel-h1">Finde das passende <em>Verfahren</em></h1>
     <p class="wel-sub">Beantworte die Fragen Schritt für Schritt. Der Pfad baut sich mit – am Ziel steht das passende Verfahren samt Begründung. Kein Auswendiglernen, sondern Entscheiden.</p>
     <div class="wel-pick">Womit möchtest du beginnen?</div>
-    <div class="wel-cards">
-      <button class="wel-card" data-root="unterschied">
-        <span class="wel-arrow">→</span>
-        <span class="wel-tag">UNTERSCHIEDE</span>
-        <h3>Unterschiedshypothesen</h3>
-        <p>Verfahren zum Vergleich von Gruppen oder Messungen</p>
-      </button>
-      <button class="wel-card" data-root="zusammenhang">
-        <span class="wel-arrow">→</span>
-        <span class="wel-tag">ZUSAMMENHANG</span>
-        <h3>Zusammenhangshypothesen</h3>
-        <p>Korrelationen und Regressionen zwischen Variablen</p>
-      </button>
-      <button class="wel-card" data-root="moderation">
-        <span class="wel-arrow">→</span>
-        <span class="wel-tag">MODERATION</span>
-        <h3>Moderationshypothesen</h3>
-        <p>Einfluss einer dritten Variable auf einen Effekt</p>
-      </button>
-    </div>
+    <div class="wel-cards" id="welCards"><!-- aus window.ROOTS generiert --></div>
     <div class="wel-foot"><a class="legal-link" href="rechtliches.html">Impressum &amp; Datenschutz</a></div>
   </main>
 </div>
@@ -598,11 +576,7 @@
               <button class="pt-info" id="infoBtn" title="Worum geht's?">?</button>
             </div>
           </div>
-          <div class="seg" id="seg">
-            <button class="seg-btn active" data-root="unterschied">Unterschied</button>
-            <button class="seg-btn" data-root="zusammenhang">Zusammenhang</button>
-            <button class="seg-btn" data-root="moderation">Moderation</button>
-          </div>
+          <select class="mode-select" id="modeSelect" aria-label="Hypothesentyp wechseln"><!-- aus window.ROOTS generiert --></select>
           <p class="panel-desc" id="panelDesc">Beantworte die Fragen Schritt für Schritt. Der Pfad baut sich mit – am Ziel steht das passende Verfahren samt Begründung.</p>
         </div>
         <div class="path" id="path"></div>
@@ -622,6 +596,7 @@
   <footer>Daten nach dem Entscheidungsbaum (Forschungsmethoden WS25, WEBER)<br><a class="legal-link" href="rechtliches.html">Impressum &amp; Datenschutz</a></footer>
 </div>
 
+<script src="data/roots.js"></script>
 <script src="data/trees.js"></script>
 <script src="data/methods.js"></script>
 <script src="data/concepts.js"></script>
@@ -777,15 +752,41 @@ function start(root){
   renderNode(startId);
 }
 
-/* Hypothesentyp umschalten – hält große Buttons UND Segmented-Toggle synchron */
+/* Hypothesentypen aus dem Manifest (data/roots.js) */
+const ROOTS = window.ROOTS || [];
+
+/* Welcome-Karten aus dem Manifest generieren */
+function renderWelcomeCards(){
+  const host=document.getElementById('welCards');
+  if(!host || !ROOTS.length) return;
+  host.innerHTML='';
+  ROOTS.forEach(r=>{
+    const b=document.createElement('button');
+    b.className='wel-card'; b.dataset.root=r.id;
+    b.innerHTML=`<span class="wel-arrow">→</span><span class="wel-tag">${r.tag}</span>`+
+                `<h3>${r.label}</h3><p>${r.desc}</p>`;
+    b.addEventListener('click',()=>enterApp(r.id));
+    host.appendChild(b);
+  });
+}
+/* Umschalt-Dropdown aus dem Manifest generieren */
+function renderModeSelect(){
+  const sel=document.getElementById('modeSelect');
+  if(!sel || !ROOTS.length) return;
+  sel.innerHTML='';
+  ROOTS.forEach(r=>{
+    const o=document.createElement('option'); o.value=r.id; o.textContent=r.short;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change',()=>setMode(sel.value));
+}
+
+/* Hypothesentyp umschalten – hält das Dropdown synchron */
 function setMode(root){
-  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active', b.dataset.root===root));
-  document.querySelectorAll('.seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.root===root));
+  const sel=document.getElementById('modeSelect');
+  if(sel) sel.value=root;
   start(root);
 }
-document.querySelectorAll('.mode-btn, .seg-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>setMode(btn.dataset.root));
-});
 
 /* Vom Startbildschirm in die App: Modus wählen → Karte aufbauen → Welcome ausblenden */
 function enterApp(root){
@@ -795,9 +796,8 @@ function enterApp(root){
   w.classList.add('hide');
   setTimeout(()=>{ w.style.display='none'; centerOnCurrent(false); }, 460);
 }
-document.querySelectorAll('.wel-card').forEach(card=>{
-  card.addEventListener('click',()=>enterApp(card.dataset.root));
-});
+renderWelcomeCards();
+renderModeSelect();
 
 /* Info-Button im Panelkopf blendet die Kurzbeschreibung ein/aus */
 (function(){
@@ -898,7 +898,9 @@ const NODE_SHORT = {
   z_m_uvtyp:"UV-Niveau?", z_d_uvtyp:"UV-Niveau?", z_n_uvtyp:"UV-Niveau?",
   z_m_ausreisser:"Ausreißer?",
   // Moderation
-  m_av:"AV-Niveau?", m_uv:"UV-Art?", m_uvkat_mod:"Moderator?", m_uvmet_mod:"Moderator?"
+  m_av:"AV-Niveau?", m_uv:"UV-Art?", m_uvkat_mod:"Moderator?", m_uvmet_mod:"Moderator?",
+  // Mediation
+  med_start:"Mediation?"
 };
 function nodeLabel(id){ return NODE_SHORT[id] || (TREES[currentRoot].nodes[id]||{}).tag || id; }
 
