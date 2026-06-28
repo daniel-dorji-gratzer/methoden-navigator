@@ -33,9 +33,12 @@ def main():
     if not xlsx.exists():
         sys.exit(f"Quelldatei nicht gefunden: {xlsx}")
     wb = openpyxl.load_workbook(xlsx, data_only=True)
-    if SHEET not in wb.sheetnames:
-        sys.exit(f"Blatt '{SHEET}' fehlt in {xlsx.name}")
-    ws = wb[SHEET]
+    # Glossar-Blatt robust finden (z. B. 'Glossar & Konzepte' oder 'Glossar_Konzepte')
+    sheet = next((s for s in wb.sheetnames
+                  if "glossar" in s.lower() or "konzept" in s.lower()), None)
+    if not sheet:
+        sys.exit(f"Kein Glossar-/Konzept-Blatt in {xlsx.name} gefunden")
+    ws = wb[sheet]
     rows = list(ws.iter_rows(values_only=True))
     hdr = [str(h).strip() if h else "" for h in rows[0]]
 
