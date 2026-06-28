@@ -60,7 +60,8 @@ python3 -m http.server 8000   # dann http://localhost:8000/ öffnen
 ### Werkzeuge
 
 - [`tools/validate.py`](tools/validate.py) – Integritäts-Gate (reine Standardbibliothek).
-- [`tools/build_concepts.py`](tools/build_concepts.py) – erzeugt `data/concepts.js` aus dem Katalog-Blatt „Glossar & Konzepte" (benötigt `openpyxl`). Erster Baustein der Tabelle→Daten-Pipeline.
+- [`tools/build_methods.py`](tools/build_methods.py) – erzeugt `data/methods.js` aus dem Katalog-Blatt „Methoden" (Status „Implementiert"/„Geplant"); wandelt `**fett**` → `<b>` und maskiert Sonderzeichen. Benötigt `openpyxl`.
+- [`tools/build_concepts.py`](tools/build_concepts.py) – erzeugt `data/concepts.js` aus dem Katalog-Blatt „Glossar & Konzepte" (benötigt `openpyxl`). Bausteine der Tabelle→Daten-Pipeline.
 - [`tools/migrate_extract.py`](tools/migrate_extract.py) – einmalige Migration der früheren Inline-Daten in die `data/`-Dateien (Reproduzierbarkeit; benötigt macOS `osascript`).
 
 ## Kontext

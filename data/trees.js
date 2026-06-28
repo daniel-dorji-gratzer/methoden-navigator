@@ -2,7 +2,7 @@
    Quelle: tools/migrate_extract.py. Struktur: data/schema.md */
 window.TREES = {
   "unterschied": {
-    "start": "u_design",
+    "start": "u_root",
     "nodes": {
       "u_design": {
         "tag": "Studiendesign",
@@ -281,6 +281,84 @@ window.TREES = {
             "label": "ε ≥ 0,75",
             "crumb": "ε ≥ 0,75",
             "go": "r_hf"
+          }
+        ]
+      },
+      "u_root": {
+        "tag": "Vergleichsart",
+        "q": "Was möchtest du vergleichen?",
+        "hint": "Eine einzelne Stichprobe gegen einen festen Sollwert/die Theorie – oder Gruppen bzw. Messungen untereinander?",
+        "opts": [
+          {
+            "label": "Eine Stichprobe gegen einen Sollwert / die Theorie",
+            "crumb": "gegen Sollwert",
+            "go": "es_start"
+          },
+          {
+            "label": "Gruppen oder Messungen untereinander",
+            "crumb": "Gruppenvergleich",
+            "go": "u_design"
+          }
+        ]
+      },
+      "es_start": {
+        "tag": "Art der Prüfung",
+        "q": "Was prüfst du gegen die Theorie?",
+        "hint": "Eine Kennzahl gegen einen Sollwert – oder ob die Daten einer theoretischen Verteilung folgen.",
+        "opts": [
+          {
+            "label": "Eine Kennzahl gegen einen Sollwert (Mittelwert, Median, Anteil, Häufigkeiten)",
+            "crumb": "Kennzahl vs. Sollwert",
+            "go": "es_av"
+          },
+          {
+            "label": "Ob die Daten einer theoretischen Verteilung folgen (z. B. Normalverteilung)",
+            "crumb": "Verteilungsanpassung",
+            "go": "r_vtlg_fit"
+          }
+        ]
+      },
+      "es_av": {
+        "tag": "Skalenniveau der AV",
+        "q": "Welches Skalenniveau hat die untersuchte Variable?",
+        "hint": "Davon hängt das Einstichproben-Verfahren ab.",
+        "opts": [
+          {
+            "label": "Metrisch",
+            "crumb": "metrisch",
+            "go": "es_nv"
+          },
+          {
+            "label": "Ordinal",
+            "crumb": "ordinal",
+            "go": "r_wilcoxon_1s"
+          },
+          {
+            "label": "Dichotom",
+            "crumb": "dichotom",
+            "go": "r_binomial"
+          },
+          {
+            "label": "Nominal (mehrere Kategorien)",
+            "crumb": "nominal",
+            "go": "r_chi_gof"
+          }
+        ]
+      },
+      "es_nv": {
+        "tag": "Voraussetzung",
+        "q": "Sind die Werte (näherungsweise) normalverteilt?",
+        "hint": "Bei metrischer Variable entscheidet die Normalverteilung zwischen t-Test und rangbasierter Alternative.",
+        "opts": [
+          {
+            "label": "Ja, normalverteilt",
+            "crumb": "NV: ja",
+            "go": "r_ttest_1s"
+          },
+          {
+            "label": "Nein",
+            "crumb": "NV: nein",
+            "go": "r_wilcoxon_1s"
           }
         ]
       }

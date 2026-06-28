@@ -1,5 +1,5 @@
-/* Datengetrieben – AUTOMATISCH erzeugt, nicht von Hand editieren.
-   Quelle: tools/migrate_extract.py. Struktur: data/schema.md */
+/* Datengetrieben – AUTOMATISCH erzeugt aus dem Katalog-Blatt 'Methoden'.
+   Nicht von Hand editieren. Struktur: data/schema.md */
 window.METHODS = {
   "r_ttest_zsf": {
     "name": "t-Test für unabhängige Stichproben",
@@ -10,9 +10,9 @@ window.METHODS = {
   "r_welch": {
     "name": "Welch-Test",
     "why": "Metrische, normalverteilte AV bei zwei Gruppen, aber <b>heterogene Varianzen</b> – der Welch-Test korrigiert dafür über angepasste Freiheitsgrade.",
-    "warn": true,
     "check": "Bei homogenen Varianzen genügt der gewöhnliche t-Test.",
-    "how": "Der Welch-Test ist eine Variante des t-Tests für <b>ungleiche Varianzen</b>. Er poolt die Streuungen nicht, sondern gewichtet sie getrennt und passt die Freiheitsgrade über die Welch-Satterthwaite-Formel nach unten an. Dadurch bleibt der Test auch dann gültig, wenn die Gruppen unterschiedlich stark streuen. Er steht hier, weil die Varianzhomogenität verletzt ist – die einzige Bedingung, die den klassischen t-Test ausschließt. Da Welch bei homogenen Varianzen kaum Power verliert, empfehlen ihn manche generell als Standard."
+    "how": "Der Welch-Test ist eine Variante des t-Tests für <b>ungleiche Varianzen</b>. Er poolt die Streuungen nicht, sondern gewichtet sie getrennt und passt die Freiheitsgrade über die Welch-Satterthwaite-Formel nach unten an. Dadurch bleibt der Test auch dann gültig, wenn die Gruppen unterschiedlich stark streuen. Er steht hier, weil die Varianzhomogenität verletzt ist – die einzige Bedingung, die den klassischen t-Test ausschließt. Da Welch bei homogenen Varianzen kaum Power verliert, empfehlen ihn manche generell als Standard.",
+    "warn": true
   },
   "r_mwu": {
     "name": "Mann-Whitney-U-Test",
@@ -41,9 +41,9 @@ window.METHODS = {
   "r_gameshowell": {
     "name": "Welch-ANOVA + Games-Howell",
     "why": "Metrische, normalverteilte AV über mehr als zwei Gruppen, aber <b>heterogene Varianzen</b> – Games-Howell ist das varianz-robuste Post-hoc-Verfahren.",
-    "warn": true,
     "check": "Bei Varianzhomogenität genügt die klassische ANOVA mit Tukey HSD.",
-    "how": "Bei mehr als zwei Gruppen mit metrischer, normalverteilter AV, aber <b>ungleichen Varianzen</b> greift die Welch-ANOVA (sie korrigiert wie der Welch-Test die Freiheitsgrade). Für die anschließenden paarweisen Vergleiche ist Games-Howell das passende Post-hoc-Verfahren, weil es – anders als Tukey HSD – keine Varianzhomogenität voraussetzt. Diese Kombination steht hier genau deshalb: Die Varianzheterogenität schließt die klassische ANOVA mit Tukey aus."
+    "how": "Bei mehr als zwei Gruppen mit metrischer, normalverteilter AV, aber <b>ungleichen Varianzen</b> greift die Welch-ANOVA (sie korrigiert wie der Welch-Test die Freiheitsgrade). Für die anschließenden paarweisen Vergleiche ist Games-Howell das passende Post-hoc-Verfahren, weil es – anders als Tukey HSD – keine Varianzhomogenität voraussetzt. Diese Kombination steht hier genau deshalb: Die Varianzheterogenität schließt die klassische ANOVA mit Tukey aus.",
+    "warn": true
   },
   "r_kreuz": {
     "name": "Kreuztabelle / χ²-Test",
@@ -78,9 +78,9 @@ window.METHODS = {
   "r_wilcoxon": {
     "name": "Wilcoxon-Vorzeichen-Rang-Test",
     "why": "Zwei abhängige metrische Messungen, deren <b>Differenzen nicht normalverteilt</b> sind – das nonparametrische Pendant zum gepaarten t-Test.",
-    "warn": true,
     "check": "Bei normalverteilten Differenzen → gepaarter t-Test.",
-    "how": "Der Wilcoxon-Vorzeichen-Rang-Test ist das nonparametrische Gegenstück zum gepaarten t-Test. Er bildet die Differenzen, ordnet ihre <b>Beträge</b> in Ränge und summiert die Ränge getrennt nach Vorzeichen. Anders als der reine Vorzeichentest nutzt er damit auch die <b>Größe</b> der Differenzen, bleibt aber robust gegen Verletzungen der Normalverteilung. Er steht hier, weil zwei verbundene metrische Messungen vorliegen, deren Differenzen <b>nicht</b> normalverteilt sind."
+    "how": "Der Wilcoxon-Vorzeichen-Rang-Test ist das nonparametrische Gegenstück zum gepaarten t-Test. Er bildet die Differenzen, ordnet ihre <b>Beträge</b> in Ränge und summiert die Ränge getrennt nach Vorzeichen. Anders als der reine Vorzeichentest nutzt er damit auch die <b>Größe</b> der Differenzen, bleibt aber robust gegen Verletzungen der Normalverteilung. Er steht hier, weil zwei verbundene metrische Messungen vorliegen, deren Differenzen <b>nicht</b> normalverteilt sind.",
+    "warn": true
   },
   "r_cochran": {
     "name": "Cochran-Q-Test",
@@ -103,16 +103,16 @@ window.METHODS = {
   "r_gg": {
     "name": "Greenhouse-Geisser-Korrektur",
     "why": "Messwiederholungs-ANOVA mit <b>verletzter Sphärizität</b> und <b>ε &lt; 0,75</b> – Greenhouse-Geisser korrigiert die Freiheitsgrade konservativer.",
-    "warn": true,
     "check": "Bei ε ≥ 0,75 ist Greenhouse-Geisser zu konservativ → Huynh-Feldt.",
-    "how": "Ist bei der Messwiederholungs-ANOVA die <b>Sphärizität verletzt</b>, wird der Test zu liberal (zu viele falsch-positive Ergebnisse). Die Greenhouse-Geisser-Korrektur multipliziert die Freiheitsgrade mit einem Schätzer ε (zwischen 0 und 1), der das Ausmaß der Verletzung abbildet, und macht den Test dadurch <b>konservativer</b>. Sie steht hier, weil ε &lt; 0,75 – also eine deutliche Verletzung vorliegt, bei der die stärkere (konservativere) Korrektur angemessen ist. Bei ε ≥ 0,75 wäre Greenhouse-Geisser zu streng, dann Huynh-Feldt."
+    "how": "Ist bei der Messwiederholungs-ANOVA die <b>Sphärizität verletzt</b>, wird der Test zu liberal (zu viele falsch-positive Ergebnisse). Die Greenhouse-Geisser-Korrektur multipliziert die Freiheitsgrade mit einem Schätzer ε (zwischen 0 und 1), der das Ausmaß der Verletzung abbildet, und macht den Test dadurch <b>konservativer</b>. Sie steht hier, weil ε &lt; 0,75 – also eine deutliche Verletzung vorliegt, bei der die stärkere (konservativere) Korrektur angemessen ist. Bei ε ≥ 0,75 wäre Greenhouse-Geisser zu streng, dann Huynh-Feldt.",
+    "warn": true
   },
   "r_hf": {
     "name": "Huynh-Feldt-Korrektur",
     "why": "Messwiederholungs-ANOVA mit verletzter Sphärizität, aber <b>ε ≥ 0,75</b> – Huynh-Feldt ist hier die weniger konservative, passendere Korrektur.",
-    "warn": true,
     "check": "Bei ε &lt; 0,75 wäre Greenhouse-Geisser angemessener.",
-    "how": "Die Huynh-Feldt-Korrektur passt – wie Greenhouse-Geisser – bei verletzter Sphärizität die Freiheitsgrade der Messwiederholungs-ANOVA über ε an, ist dabei aber <b>weniger konservativ</b>. Sie steht hier, weil ε ≥ 0,75 ist: Die Sphärizitätsverletzung ist moderat, und Greenhouse-Geisser würde unnötig Power kosten. Faustregel: ε &lt; 0,75 → Greenhouse-Geisser, ε ≥ 0,75 → Huynh-Feldt."
+    "how": "Die Huynh-Feldt-Korrektur passt – wie Greenhouse-Geisser – bei verletzter Sphärizität die Freiheitsgrade der Messwiederholungs-ANOVA über ε an, ist dabei aber <b>weniger konservativ</b>. Sie steht hier, weil ε ≥ 0,75 ist: Die Sphärizitätsverletzung ist moderat, und Greenhouse-Geisser würde unnötig Power kosten. Faustregel: ε &lt; 0,75 → Greenhouse-Geisser, ε ≥ 0,75 → Huynh-Feldt.",
+    "warn": true
   },
   "r_mlr": {
     "name": "Multiple lineare Regression",
@@ -197,5 +197,36 @@ window.METHODS = {
     "why": "<b>Nicht-metrische AV</b> (dichotom/nominal/ordinal): Die Moderation wird über einen Interaktionsterm in der passenden (binär-, multinomial- oder ordinal-)logistischen Regression bzw. einem loglinearen Modell geprüft.",
     "check": "Die Verfahrensfamilie richtet sich nach dem AV-Niveau wie auf der Zusammenhangsseite; ergänzt wird jeweils der Interaktionsterm UV×Moderator.",
     "how": "Ist die AV nicht metrisch, verschiebt sich die Moderation in die Familie der <b>logistischen bzw. loglinearen Modelle</b>: Man wählt – wie auf der Zusammenhangsseite – das zum AV-Niveau passende Verfahren (binär-, multinomial- oder ordinal-logistisch) und nimmt zusätzlich einen <b>Interaktionsterm UV×Moderator</b> auf. Ein signifikanter Interaktionsterm zeigt, dass der Einfluss der UV auf die (Log-)Odds der AV vom Moderator abhängt. Sie steht hier als Sammelknoten für alle nicht-metrischen AV; das konkrete Verfahren richtet sich nach Dichotomie/Nominal-/Ordinalniveau der AV."
+  },
+  "r_ttest_1s": {
+    "name": "Einstichproben-t-Test",
+    "why": "Metrische Variable aus einer einzigen Stichprobe, die gegen einen theoretisch erwarteten Mittelwert μ₀ geprüft wird (z. B. Testwert gegen Normwert) – bei normalverteilten Daten ist das der Einstichproben-t-Test.",
+    "check": "Bei verletzter Normalverteilung → Einstichproben-Wilcoxon-Test. Werden zwei Gruppen statt eines Sollwerts verglichen → t-Test für unabhängige bzw. abhängige Stichproben.",
+    "how": "Der Einstichproben-t-Test setzt die Differenz zwischen Stichprobenmittelwert und theoretischem Sollwert μ₀ ins Verhältnis zum <b>Standardfehler des Mittelwerts</b>. Je weiter der beobachtete Mittelwert vom Sollwert entfernt liegt (relativ zur Streuung), desto größer der t-Wert; aus t und den Freiheitsgraden folgt der p-Wert. Er steht hier, weil nicht zwei Gruppen verglichen werden, sondern eine Stichprobe <b>gegen einen festen theoretischen Wert</b> – und die AV metrisch und normalverteilt ist. Ist die Normalverteilung verletzt, übernimmt der Einstichproben-Wilcoxon-Test."
+  },
+  "r_wilcoxon_1s": {
+    "name": "Einstichproben-Wilcoxon-Test",
+    "why": "Eine Stichprobe gegen einen theoretischen Median, wenn die Daten ordinal sind oder die Normalverteilung verletzt ist – die nonparametrische Alternative zum Einstichproben-t-Test.",
+    "check": "Bei erfüllter Normalverteilung ist der Einstichproben-t-Test stärker. Geht es um zwei verbundene Messungen statt um einen Sollwert → Wilcoxon-Vorzeichen-Rang-Test (Paardifferenzen).",
+    "how": "Der Einstichproben-Wilcoxon-Test bildet die Differenzen jedes Werts zum theoretischen Sollwert, rangordnet deren <b>Beträge</b> und prüft, ob positive und negative Abweichungen symmetrisch ausfallen oder systematisch in eine Richtung weisen. Weil er auf Rängen statt Rohwerten rechnet, braucht er keine Normalverteilung und nur ordinales Niveau. Er steht hier, weil eine Stichprobe gegen einen Sollwert geprüft wird und die Voraussetzungen des t-Tests nicht erfüllt sind. Noch voraussetzungsärmer, aber schwächer, ist der Einstichproben-Vorzeichentest."
+  },
+  "r_binomial": {
+    "name": "Binomialtest",
+    "why": "Dichotome Variable aus einer Stichprobe, deren beobachteter Anteil gegen einen theoretisch erwarteten Anteil p₀ geprüft wird (z. B. Trefferquote gegen Ratewahrscheinlichkeit 0,5).",
+    "check": "Mehr als zwei Kategorien gegen eine Sollverteilung → χ²-Anpassungstest. Zwei Gruppen mit dichotomer AV → Vierfeldertafel / χ²-Test.",
+    "how": "Der Binomialtest berechnet <b>exakt</b>, wie wahrscheinlich der beobachtete (oder ein extremerer) Trefferanteil wäre, wenn der wahre Anteil dem theoretischen p₀ entspräche – direkt über die Binomialverteilung. Weil er exakt rechnet, ist er auch bei kleinen Stichproben gültig. Er steht hier, weil eine einzelne dichotome Variable gegen einen <b>Sollwert-Anteil</b> getestet wird, nicht zwei Gruppen verglichen werden. Bei großen Stichproben nähert sich das Ergebnis dem χ²-Anpassungstest an."
+  },
+  "r_chi_gof": {
+    "name": "χ²-Anpassungstest (Goodness-of-Fit)",
+    "why": "Nominale Variable aus einer Stichprobe, deren beobachtete Kategorienhäufigkeiten gegen eine theoretisch erwartete Verteilung geprüft werden (z. B. Gleichverteilung über Antwortoptionen).",
+    "check": "Zwei nominale Variablen auf Zusammenhang → χ²-Unabhängigkeitstest (Kreuztabelle). Nur zwei Kategorien → Binomialtest ist exakter.",
+    "how": "Der χ²-Anpassungstest vergleicht die <b>beobachteten</b> Häufigkeiten je Kategorie mit den Häufigkeiten, die eine <b>theoretische Verteilung</b> vorhersagt; große Abweichungen summieren sich zu einem großen χ². Er prüft also die Passung der Daten an ein Modell, nicht den Zusammenhang zweier Variablen. Er steht hier, weil eine einzelne nominale Variable gegen eine Sollverteilung getestet wird. Die erwarteten Häufigkeiten sollten groß genug sein (Faustregel ≥ 5), sonst ist er unzuverlässig."
+  },
+  "r_vtlg_fit": {
+    "name": "Verteilungs-Anpassungstest (KS / Shapiro-Wilk)",
+    "why": "Prüft, ob eine metrische Variable einer theoretischen Verteilung folgt – am häufigsten der Normalverteilung. Doppelrolle: eigenständige Fragestellung „gegen die Theorie“ und zugleich Voraussetzungstest für viele parametrische Verfahren.",
+    "check": "Als Voraussetzungstest mit Vorsicht interpretieren (siehe Konzept „Grenzen von Voraussetzungstests“). Für den Vergleich zweier Verteilungen statt gegen eine Theorie → Zweistichproben-KS-Test.",
+    "how": "Der Kolmogorov-Smirnov-Test vergleicht die <b>empirische</b> mit der <b>theoretischen</b> kumulativen Verteilung und nimmt die größte Abweichung als Prüfgröße; der Shapiro-Wilk-Test ist speziell auf die Normalverteilung zugeschnitten und dort meist trennschärfer. Sie stehen hier, wenn die Frage lautet, ob die Daten einer angenommenen Verteilung entsprechen. <b>Wichtige Einschränkung:</b> Bei kleinen Stichproben haben sie wenig Power (Verletzungen bleiben unentdeckt), bei sehr großen schlagen schon unbedeutende Abweichungen an – ihre Aussagekraft als Voraussetzungstest ist daher begrenzt.",
+    "warn": true
   }
 };
