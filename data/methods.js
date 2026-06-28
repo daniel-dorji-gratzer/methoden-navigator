@@ -223,6 +223,20 @@ window.METHODS = {
     "how": "Die Cox-Regression modelliert die <b>Hazard-Rate</b> (das momentane Ereignisrisiko über die Zeit) als Produkt aus einer unspezifizierten Basis-Hazard und dem Einfluss der Prädiktoren; deren Koeffizienten lassen sich als <b>Hazard Ratios</b> deuten. Weil die Form der Basis-Hazard offenbleibt, ist sie flexibel und nutzt zensierte Daten. Sie steht hier, wenn mehrere Prädiktoren gleichzeitig auf eine Zeit-bis-Ereignis-AV bezogen werden sollen – das Regressionsmodell der Survival-Analyse. Sie setzt <b>proportionale Hazards</b> voraus; ist diese Annahme verletzt, braucht es zeitabhängige Kovariaten oder erweiterte Modelle.",
     "warn": true
   },
+  "r_lmm": {
+    "name": "Lineares Mixed-Model (LMM)",
+    "why": "Metrische AV bei genesteten/hierarchischen Daten (Messungen in Personen, Personen in Gruppen/Kliniken) – trennt feste von zufälligen Effekten. Erfordert Long-Format der Daten.",
+    "check": "Sobald Daten genested sind, sind klassische ANOVA/Regression nicht mehr angemessen – die ganze Modellklasse ändert sich. Wide- vs. Long-Format beachten.",
+    "how": "Das lineare Mixed-Model erweitert die Regression um <b>zufällige Effekte</b> und trägt damit der Tatsache Rechnung, dass Beobachtungen <b>genested</b> sind (z. B. Messungen in Personen, Personen in Kliniken) und sich innerhalb einer Einheit ähneln. Es trennt feste Effekte (durchschnittliche Zusammenhänge) von zufälligen Effekten (Variation zwischen den Einheiten) und schätzt beide gemeinsam. Es steht hier für eine metrische AV bei hierarchischen Daten und setzt das <b>Long-Format</b> voraus. Sobald Daten genested sind, sind klassische ANOVA/Regression nicht mehr angemessen, weil sie die Abhängigkeit der Beobachtungen ignorieren.",
+    "warn": true
+  },
+  "r_glmm": {
+    "name": "Generalisiertes Mixed-Model (GLMM)",
+    "why": "Wie LMM, aber für nicht-metrische AV (binär, Zähldaten, ordinal) bei genesteten Daten – kombiniert Mixed-Model-Logik mit generalisierter Regression.",
+    "check": "AV-Niveau bestimmt die Verteilungsfamilie (analog zur Zusammenhangsseite); ergänzt um zufällige Effekte für die Datenhierarchie.",
+    "how": "Das generalisierte Mixed-Model verbindet die Logik des Mixed-Models (<b>zufällige Effekte</b> für genestete Daten) mit der generalisierten Regression: Über eine passende <b>Verteilungsfamilie und Link-Funktion</b> verarbeitet es nicht-metrische AV wie binäre, Zähl- oder ordinale Daten. Es ist damit die Verallgemeinerung des LMM auf AV, die keine metrische, normalverteilte Größe sind. Es steht hier, wenn solche AV in hierarchischen Daten vorliegen. Welche Verteilungsfamilie zu wählen ist, richtet sich nach dem AV-Niveau – analog zur Zusammenhangsseite, nur ergänzt um zufällige Effekte für die Datenhierarchie.",
+    "warn": true
+  },
   "r_ttest_1s": {
     "name": "Einstichproben-t-Test",
     "why": "Metrische Variable aus einer einzigen Stichprobe, die gegen einen theoretisch erwarteten Mittelwert μ₀ geprüft wird (z. B. Testwert gegen Normwert) – bei normalverteilten Daten ist das der Einstichproben-t-Test.",

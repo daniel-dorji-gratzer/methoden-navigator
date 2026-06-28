@@ -17,7 +17,7 @@ window.TREES = {
           {
             "label": "Abhängige Stichproben (ISF)",
             "crumb": "ISF",
-            "go": "u_isf_stufen"
+            "go": "u_isf_struktur"
           }
         ]
       },
@@ -359,6 +359,40 @@ window.TREES = {
             "label": "Nein",
             "crumb": "NV: nein",
             "go": "r_wilcoxon_1s"
+          }
+        ]
+      },
+      "u_isf_struktur": {
+        "tag": "Datenstruktur",
+        "q": "Wie sind die abhängigen Daten strukturiert?",
+        "hint": "Klassische Messwiederholung (Messungen in Personen) – oder komplexer genested (z. B. Messungen in Personen in Kliniken, gekreuzte Effekte)?",
+        "opts": [
+          {
+            "label": "Klassische Messwiederholung (eine Gruppierungsebene)",
+            "crumb": "Messwiederholung",
+            "go": "u_isf_stufen"
+          },
+          {
+            "label": "Komplexer genested / zufällige Effekte nötig",
+            "crumb": "Mehrebenen",
+            "go": "mehr_av"
+          }
+        ]
+      },
+      "mehr_av": {
+        "tag": "Skalenniveau der AV",
+        "q": "Welches Skalenniveau hat die abhängige Variable?",
+        "hint": "Bei hierarchischen Daten bestimmt das AV-Niveau, ob ein lineares oder generalisiertes Mixed-Model passt.",
+        "opts": [
+          {
+            "label": "Metrisch",
+            "crumb": "AV metrisch",
+            "go": "r_lmm"
+          },
+          {
+            "label": "Nicht-metrisch (binär, Zähl- oder ordinal)",
+            "crumb": "AV nicht-metrisch",
+            "go": "r_glmm"
           }
         ]
       }
