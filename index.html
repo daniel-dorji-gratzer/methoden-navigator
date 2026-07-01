@@ -292,6 +292,9 @@
     body{padding:0}
     .wrap{max-width:none;margin:0;height:100vh;height:100dvh;display:flex;flex-direction:column;padding:0}
     footer{display:none}
+    /* Startbildschirm auf kleinen Screens scrollbar (sonst oben abgeschnitten) */
+    #welcome{overflow-y:auto;-webkit-overflow-scrolling:touch}
+    .wel-main{justify-content:flex-start}
     .canvasArea{
       position:relative;flex:1 1 auto;min-height:0;margin:0;border:0;border-radius:0;box-shadow:none;overflow:hidden;
       background:
@@ -328,7 +331,7 @@
       cursor:grab;touch-action:none;
     }
     .sheet-grab .pill{width:40px;height:4px;border-radius:3px;background:#3a5b72}
-    .panel-scroll{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 18px}
+    .panel-scroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;padding:0 16px 18px}
     .panel .card{margin-bottom:4px}
     .glossary{margin-top:16px}
   }
@@ -1304,7 +1307,10 @@ function showGlossPop(span){
     document.addEventListener('mousemove',mm); document.addEventListener('mouseup',mu); e.preventDefault();
   });
   function sync(){ if(mobile()) apply(snap,false); else { panel.style.transform=''; panel.style.transition=''; } }
-  window.addEventListener('resize', sync);
+  // Nur bei echter Breitenänderung neu ausrichten (Orientierung/Desktop-Wechsel).
+  // iOS feuert beim Scrollen resize wegen der Adressleiste – das würde das Sheet zurücksetzen.
+  let lastW=window.innerWidth;
+  window.addEventListener('resize', ()=>{ if(window.innerWidth!==lastW){ lastW=window.innerWidth; sync(); } });
   sync();
 })();
 
