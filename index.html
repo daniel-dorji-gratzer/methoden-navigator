@@ -283,23 +283,53 @@
   }
   .backline:hover{color:var(--teal)}
 
-  /* ===== Mobile / schmale Screens: alles untereinander ===== */
-  .mapStage{margin-top:4px}
+  /* Griff-Leiste nur mobil sichtbar */
+  .sheet-grab{display:none}
+
+  /* ===== Mobile: Vollbild-Karte + ziehbares Bottom-Sheet (Maps-Prinzip) ===== */
   .mapPan{transform-origin:0 0}
   @media (max-width:1079px){
-    .panel .panel-scroll{padding:0}
+    body{padding:0}
+    .wrap{max-width:none;margin:0;height:100vh;height:100dvh;display:flex;flex-direction:column;padding:0}
+    footer{display:none}
+    .canvasArea{
+      position:relative;flex:1 1 auto;min-height:0;margin:0;border:0;border-radius:0;box-shadow:none;overflow:hidden;
+      background:
+        radial-gradient(circle at 1px 1px, rgba(159,188,207,.10) 1px, transparent 0) 0 0/24px 24px,
+        linear-gradient(180deg,var(--bg2),var(--bg));
+    }
+    .mapStage{position:absolute;inset:0;overflow:auto;-webkit-overflow-scrolling:touch;border:0;border-radius:0;background:none;padding:0;margin:0}
+    .mapPan{padding:70px 40px 62vh 40px;box-sizing:content-box}
+    .mapPan .map-svg{display:block}
+    /* Zoom/Zentrieren schweben oben rechts (nie vom Sheet verdeckt) */
+    .mapControls{
+      display:flex;flex-direction:column;gap:6px;position:absolute;right:12px;top:12px;z-index:6;
+    }
+    .mapctl{
+      width:36px;height:36px;border-radius:10px;cursor:pointer;
+      background:rgba(18,38,52,.9);border:1px solid var(--panel-edge);
+      color:var(--ink);font-size:1.2rem;font-family:inherit;line-height:1;
+      display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);
+    }
+    .mapLegendFloat{display:none}
+
+    /* Bottom-Sheet */
+    .panel{
+      position:fixed;left:0;right:0;bottom:0;z-index:20;width:auto;max-width:none;max-height:none;
+      height:92vh;height:92dvh;
+      background:rgba(18,38,52,.98);
+      backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);
+      border:1px solid var(--panel-edge);border-bottom:0;border-radius:18px 18px 0 0;
+      box-shadow:0 -16px 40px -20px rgba(0,0,0,.85);
+      display:flex;flex-direction:column;transform:translateY(34vh);
+    }
+    .sheet-grab{
+      flex:0 0 auto;display:flex;align-items:center;justify-content:center;height:26px;
+      cursor:grab;touch-action:none;
+    }
+    .sheet-grab .pill{width:40px;height:4px;border-radius:3px;background:#3a5b72}
+    .panel-scroll{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 18px}
     .panel .card{margin-bottom:4px}
-    .mapStage{
-      overflow-x:auto;border:1px solid var(--panel-edge);border-radius:16px;
-      background:linear-gradient(180deg,var(--panel),var(--bg2));
-      padding:10px 4px;margin-top:18px;
-    }
-    .map-svg{display:block}
-    .mapLegendFloat{
-      display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;
-      font-family:'Spline Sans Mono',monospace;font-size:.72rem;color:var(--ink-faint);
-    }
-    .mapLegendFloat i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
     .glossary{margin-top:16px}
   }
   .map-svg{display:block}
@@ -582,6 +612,7 @@
 
     <!-- schwebendes Frage-/Ergebnis-Panel -->
     <div class="panel" id="panel">
+      <div class="sheet-grab" id="sheetGrab" aria-hidden="true"><span class="pill"></span></div>
       <div class="panel-scroll">
         <!-- kompakte Kopfzeile (nur sichtbar, sobald gestartet) -->
         <div class="panel-head" id="panelHead">
@@ -693,6 +724,7 @@ function renderNode(id){
   stage.appendChild(card);
   annotateGlossary(stage);
   drawMap();
+  if(window.__setSheetSnap) window.__setSheetSnap('half');
 }
 
 function renderResult(resId){
@@ -720,6 +752,7 @@ function renderResult(resId){
   document.getElementById('back').onclick=goBack;
   annotateGlossary(stage);
   drawMap();
+  if(window.__setSheetSnap) window.__setSheetSnap('full');
 }
 
 function choose(fromId, opt){
@@ -1225,6 +1258,54 @@ function showGlossPop(span){
   window.addEventListener('resize', hideGlossPop);
   document.addEventListener('scroll', hideGlossPop, true);
   renderGlossary();
+})();
+
+/* ============================================================
+   Mobiles Bottom-Sheet (Phase 1): Snap-Points Peek / Halb / Voll,
+   ziehbar an der Griff-Leiste. Nur < 1080px aktiv; Desktop unberührt.
+   ============================================================ */
+(function(){
+  const panel=document.getElementById('panel');
+  const grab=document.getElementById('sheetGrab');
+  if(!panel || !grab) return;
+  const mobile=()=>window.matchMedia('(max-width:1079px)').matches;
+  const VIS={peek:0.14, half:0.58, full:0.92};   // sichtbarer Anteil der Höhe
+  const H=()=>window.innerHeight;
+  const sheetPx=()=>Math.round(H()*0.92);
+  const tyFor=name=>Math.round(sheetPx()-H()*VIS[name]);
+  let snap='half';
+  function apply(name, animate){
+    if(!VIS[name]) return;
+    snap=name;
+    panel.style.transition = animate===false ? 'none' : 'transform .3s cubic-bezier(.22,.61,.36,1)';
+    panel.style.transform = 'translateY('+tyFor(name)+'px)';
+    panel.dataset.snap=name;
+  }
+  window.__setSheetSnap=name=>{ if(mobile()) apply(name, true); };
+  const curTy=()=>{ const m=/translateY\(([-\d.]+)px\)/.exec(panel.style.transform||''); return m?parseFloat(m[1]):tyFor('half'); };
+  function snapNearest(){
+    const ty=curTy(); let best='half', bd=Infinity;
+    for(const k in VIS){ const d=Math.abs(tyFor(k)-ty); if(d<bd){ bd=d; best=k; } }
+    apply(best, true);
+  }
+  let dragging=false, startY=0, startTy=0;
+  function moveTo(clientY){
+    let ty=startTy+(clientY-startY);
+    ty=Math.max(tyFor('full'), Math.min(tyFor('peek'), ty));
+    panel.style.transform='translateY('+ty+'px)';
+  }
+  grab.addEventListener('touchstart',e=>{ if(!mobile())return; dragging=true; startY=e.touches[0].clientY; startTy=curTy(); panel.style.transition='none'; },{passive:true});
+  grab.addEventListener('touchmove',e=>{ if(!dragging)return; e.preventDefault(); moveTo(e.touches[0].clientY); },{passive:false});
+  grab.addEventListener('touchend',()=>{ if(!dragging)return; dragging=false; snapNearest(); });
+  // Maus-Fallback (zum Testen im schmalen Desktop-Fenster)
+  grab.addEventListener('mousedown',e=>{ if(!mobile())return; dragging=true; startY=e.clientY; startTy=curTy(); panel.style.transition='none';
+    const mm=ev=>{ if(dragging) moveTo(ev.clientY); };
+    const mu=()=>{ if(!dragging)return; dragging=false; document.removeEventListener('mousemove',mm); document.removeEventListener('mouseup',mu); snapNearest(); };
+    document.addEventListener('mousemove',mm); document.addEventListener('mouseup',mu); e.preventDefault();
+  });
+  function sync(){ if(mobile()) apply(snap,false); else { panel.style.transform=''; panel.style.transition=''; } }
+  window.addEventListener('resize', sync);
+  sync();
 })();
 
 start('unterschied');
