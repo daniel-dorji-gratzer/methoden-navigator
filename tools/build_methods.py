@@ -13,9 +13,20 @@ import json, re, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_XLSX = Path.home() / "Downloads" / "Methoden_Katalog_v3.xlsx"
+# Kanonische Quelle: neuester Katalog-Export im Projektordner (v4, v5, ...).
+SOURCE_DIR = Path.home() / "Documents" / "3_Arbeit_und_Projekte" / "Ψ_Methoden_App"
 SHEET = "Methoden"
-BUILD_STATUS = {"Implementiert", "Geplant"}
+# Nur "Implementiert" wird gebaut: implementiert = im Entscheidungsbaum erreichbar.
+# "Geplant" = ausgearbeitet, aber noch ohne Baum-Ast -> bleibt draussen.
+BUILD_STATUS = {"Implementiert"}
+
+
+def newest_catalog():
+    cands = sorted(SOURCE_DIR.glob("Methoden_Katalog*.xlsx"),
+                   key=lambda p: p.stat().st_mtime, reverse=True)
+    if not cands:
+        sys.exit(f"Kein Methoden_Katalog*.xlsx in {SOURCE_DIR}")
+    return cands[0]
 HEADER = ("/* Datengetrieben – AUTOMATISCH erzeugt aus dem Katalog-Blatt 'Methoden'.\n"
           "   Nicht von Hand editieren. Struktur: data/schema.md */\n")
 
@@ -28,9 +39,10 @@ def md_to_html(s):
 
 def main():
     import openpyxl
-    xlsx = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_XLSX
+    xlsx = Path(sys.argv[1]) if len(sys.argv) > 1 else newest_catalog()
     if not xlsx.exists():
         sys.exit(f"Quelldatei nicht gefunden: {xlsx}")
+    print(f"Quelle: {xlsx}")
     ws = openpyxl.load_workbook(xlsx, data_only=True)[SHEET]
     rows = list(ws.iter_rows(values_only=True))
     hdr = [str(h).strip() if h else "" for h in rows[0]]

@@ -1,5 +1,6 @@
-/* Datengetrieben – AUTOMATISCH erzeugt, nicht von Hand editieren.
-   Quelle: tools/migrate_extract.py. Struktur: data/schema.md */
+/* Entscheidungsbaeume – HANDGEPFLEGTE Quelle (nicht aus der Tabelle generiert).
+   Aenderungen hier vornehmen, danach: python3 tools/validate.py
+   Struktur: data/schema.md */
 window.TREES = {
   "unterschied": {
     "start": "u_root",

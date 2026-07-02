@@ -40,7 +40,14 @@ Inhalt und Code sind getrennt. Die App-Logik steckt in [index.html](index.html);
 
 Die Dateien sind JavaScript, dessen Inhalt nach dem `=` reines JSON ist. Sie werden per `<script src>` geladen – das funktioniert auf GitHub Pages **und** beim direkten Öffnen von `index.html` über `file://` (kein Server nötig). Die Verbindung zwischen Baum und Methode läuft über die Methoden-ID (z. B. `r_ttest_zsf`).
 
-> Die Datendateien sind **maschinell erzeugt** und sollten nicht von Hand editiert werden, solange der Methoden-Katalog (Tabelle) die Quelle der Wahrheit ist. Künftig erzeugt ein Build die `data/`-Dateien aus der Tabelle (nächster Ausbauschritt).
+> **Pflege-Workflow:** Quelle der Wahrheit für Methoden & Glossar ist der
+> Google-Sheets-Katalog. Export als XLSX in den Ordner
+> `~/Documents/3_Arbeit_und_Projekte/Ψ_Methoden_App/` legen (Dateiname
+> `Methoden_Katalog*.xlsx` – die Builds nehmen automatisch die neueste Datei),
+> dann `python3 tools/build_methods.py` und `python3 tools/build_concepts.py`
+> ausführen. Gebaut werden nur Methoden mit Status **„Implementiert"**.
+> `data/trees.js` (Bäume) und `data/roots.js` (Einstiege) sind **handgepflegt**.
+> `data/methods.js`/`data/concepts.js` nie von Hand editieren.
 
 ### Cache-Bremse nicht vergessen
 
@@ -69,7 +76,7 @@ python3 -m http.server 8000   # dann http://localhost:8000/ öffnen
 - [`tools/validate.py`](tools/validate.py) – Integritäts-Gate (reine Standardbibliothek).
 - [`tools/build_methods.py`](tools/build_methods.py) – erzeugt `data/methods.js` aus dem Katalog-Blatt „Methoden" (Status „Implementiert"/„Geplant"); wandelt `**fett**` → `<b>` und maskiert Sonderzeichen. Benötigt `openpyxl`.
 - [`tools/build_concepts.py`](tools/build_concepts.py) – erzeugt `data/concepts.js` aus dem Katalog-Blatt „Glossar & Konzepte" (benötigt `openpyxl`). Bausteine der Tabelle→Daten-Pipeline.
-- [`tools/migrate_extract.py`](tools/migrate_extract.py) – einmalige Migration der früheren Inline-Daten in die `data/`-Dateien (Reproduzierbarkeit; benötigt macOS `osascript`).
+- `tools/archive/migrate_extract.py` – archivierte Einmal-Migration der früheren Inline-Daten (läuft absichtlich nicht mehr; würde die handgepflegten Bäume überschreiben).
 
 ## Kontext
 

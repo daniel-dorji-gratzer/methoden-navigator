@@ -39,6 +39,10 @@ def js_eval(code):
 
 
 def main():
+    sys.exit("ARCHIVIERT: Dieses Skript diente der einmaligen Migration (Stufe 1).\n"
+             "data/trees.js wird inzwischen von Hand gepflegt; ein erneuter Lauf wuerde\n"
+             "alle seither ergaenzten Baeume (Einstichprobe, Mediation, Survival,\n"
+             "Mehrebenen) ueberschreiben.")
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     lines = Path(sys.argv[1]).read_text(encoding="utf-8").split("\n")

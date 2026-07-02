@@ -14,8 +14,16 @@ import json, sys, re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_XLSX = Path.home() / "Downloads" / "Methoden_Katalog_v3.xlsx"
-SHEET = "Glossar & Konzepte"
+# Kanonische Quelle: neuester Katalog-Export im Projektordner (v4, v5, ...).
+SOURCE_DIR = Path.home() / "Documents" / "3_Arbeit_und_Projekte" / "Ψ_Methoden_App"
+
+
+def newest_catalog():
+    cands = sorted(SOURCE_DIR.glob("Methoden_Katalog*.xlsx"),
+                   key=lambda p: p.stat().st_mtime, reverse=True)
+    if not cands:
+        sys.exit(f"Kein Methoden_Katalog*.xlsx in {SOURCE_DIR}")
+    return cands[0]
 HEADER = ("/* Datengetrieben – AUTOMATISCH erzeugt aus dem Katalog-Blatt "
           "'Glossar & Konzepte'.\n   Nicht von Hand editieren. Struktur: data/schema.md */\n")
 
@@ -29,9 +37,10 @@ def split_list(val):
 
 def main():
     import openpyxl
-    xlsx = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_XLSX
+    xlsx = Path(sys.argv[1]) if len(sys.argv) > 1 else newest_catalog()
     if not xlsx.exists():
         sys.exit(f"Quelldatei nicht gefunden: {xlsx}")
+    print(f"Quelle: {xlsx}")
     wb = openpyxl.load_workbook(xlsx, data_only=True)
     # Glossar-Blatt robust finden (z. B. 'Glossar & Konzepte' oder 'Glossar_Konzepte')
     sheet = next((s for s in wb.sheetnames

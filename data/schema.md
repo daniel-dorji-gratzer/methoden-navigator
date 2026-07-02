@@ -66,6 +66,24 @@ Glossar-/Konzepteinträge für Erklärungen und den späteren Erklärmodus. Obje
 > Noch ohne eigene UI geladen (`window.CONCEPTS` steht bereit); der Erklärmodus
 > (folgende Stufe) baut darauf auf.
 
+## `data/roots.js` — `window.ROOTS`
+
+Hypothesentypen-Manifest: **Array** (Reihenfolge = Anzeige-Reihenfolge) der
+Einstiege. Daraus werden die Welcome-Karten und das Umschalt-Dropdown generiert.
+Handgepflegt (nicht aus der Tabelle).
+
+| Feld    | Typ    | Pflicht | Bedeutung |
+|---------|--------|---------|-----------|
+| `id`    | string | ja      | Muss ein Baum in `trees.js` sein. |
+| `title` | string | ja      | Kurztitel der Welcome-Karte (z. B. „Unterschiede"). |
+| `short` | string | ja      | Beschriftung im Umschalt-Dropdown. |
+| `label` | string | nein    | Ausführlicher Name (derzeit informativ). |
+| `desc`  | string | ja      | Beschreibung auf der Welcome-Karte. |
+| `icon`  | string | ja      | Inline-SVG (nutzt `currentColor`). |
+
+> `data/trees.js` und `data/roots.js` sind **handgepflegt**; `data/methods.js`
+> und `data/concepts.js` werden aus dem Katalog gebaut (`tools/build_*.py`).
+
 ## Integritätsregeln (siehe `tools/validate.py`)
 
 1. Jedes `go`, das eine Methode ist, hat einen Eintrag in `methods.js`.

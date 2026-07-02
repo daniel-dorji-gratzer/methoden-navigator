@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Methoden-Navigator · Entscheidungsbaum</title>
+<meta name="description" content="Interaktiver Entscheidungsbaum zur Auswahl des passenden statistischen Verfahrens – Unterschieds-, Zusammenhangs-, Moderations-, Mediations- und Survival-Hypothesen, Schritt für Schritt mit Begründung.">
+<meta property="og:title" content="Methoden-Navigator · Entscheidungsbaum">
+<meta property="og:description" content="Finde das passende statistische Verfahren – Schritt für Schritt, mit Begründung und Selbstcheck. Lernhilfe für quantitative Forschungsmethoden.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://daniel-dorji-gratzer.github.io/methoden-navigator/">
+<meta name="theme-color" content="#0e1a24">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <style>
   /* Selbst gehostete Schriften — DSGVO-konform, keine Anfragen an Google-Server. */
   /* Quelle: Google Fonts, SIL Open Font License 1.1. Variable Fonts, Subsets latin + latin-ext. */
@@ -158,20 +165,6 @@
   h1 em{font-style:italic;color:var(--amber)}
   .sub{color:var(--ink-soft);margin-top:12px;max-width:54ch;font-size:.96rem}
 
-  /* mode switch */
-  .modes{display:flex;gap:8px;margin:24px 0 20px}
-  .mode-btn{
-    flex:1;padding:11px 8px;border:1px solid var(--panel-edge);
-    background:var(--panel);color:var(--ink-soft);border-radius:12px;
-    font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;
-    transition:.18s;
-  }
-  .mode-btn:hover{border-color:var(--teal);color:var(--ink)}
-  .mode-btn.active{
-    background:linear-gradient(180deg,#1c3a4f,#16293a);
-    border-color:var(--teal);color:var(--teal);
-    box-shadow:inset 0 0 0 1px rgba(45,212,191,.3);
-  }
 
   /* breadcrumb path */
   .path{
@@ -449,16 +442,14 @@
   }
 
   /* ===== Onboarding-Kollaps: großer Header weicht Panel-Kopfzeile ===== */
-  #bigHeader, #bigModes{
+  #bigHeader{
     transition:opacity .4s ease, max-height .45s ease, margin .45s ease, transform .4s ease;
     overflow:hidden;
   }
-  .wrap.started #bigHeader,
-  .wrap.started #bigModes{
+  .wrap.started #bigHeader{
     opacity:0;max-height:0;margin:0;transform:translateY(-8px);
     pointer-events:none;
   }
-  .wrap.started #bigModes{padding:0;border:0}
 
   /* Panel-Kopfzeile: erst sichtbar, wenn gestartet */
   .panel-head{
@@ -589,12 +580,6 @@
     <p class="sub">Beantworte die Fragen Schritt für Schritt. Der Pfad baut sich mit – am Ziel steht das passende Verfahren samt Begründung. Kein Auswendiglernen, sondern Entscheiden.</p>
   </header>
 
-  <div class="modes" id="bigModes">
-    <button class="mode-btn active" data-root="unterschied">Unterschiedshypothesen</button>
-    <button class="mode-btn" data-root="zusammenhang">Zusammenhangshypothesen</button>
-    <button class="mode-btn" data-root="moderation">Moderationshypothesen</button>
-  </div>
-
   <div class="canvasArea" id="canvasArea">
     <!-- Baum als scroll-/zoombare Karte -->
     <div class="mapStage" id="mapStage">
@@ -651,13 +636,23 @@
 
 <!-- ?v=… ist eine Cache-Bremse: bei JEDER Datenänderung in data/ hochzählen,
      damit Browser nicht die alte Version aus dem Cache laden. -->
-<script src="data/roots.js?v=20260628c"></script>
-<script src="data/trees.js?v=20260628c"></script>
-<script src="data/methods.js?v=20260628c"></script>
-<script src="data/concepts.js?v=20260628c"></script>
+<script src="data/roots.js?v=20260629a"></script>
+<script src="data/trees.js?v=20260629a"></script>
+<script src="data/methods.js?v=20260629a"></script>
+<script src="data/concepts.js?v=20260629a"></script>
 <script>
   /* Inhaltsdaten ausgelagert: window.TREES (data/trees.js) und window.METHODS (data/methods.js). Schema: data/schema.md */
 
+/* Lade-Guard: ohne Daten kein leerer Bildschirm, sondern eine klare Meldung */
+if(!window.TREES || !window.METHODS){
+  document.body.innerHTML =
+    '<div style="max-width:520px;margin:18vh auto;padding:0 24px;text-align:center;color:#eaf4f9;font-family:sans-serif">'+
+    '<h1 style="font-size:1.3rem;margin-bottom:12px">Inhalte konnten nicht geladen werden</h1>'+
+    '<p style="color:#9fbccf;line-height:1.6">Die Datendateien (data/trees.js, data/methods.js) wurden nicht gefunden. '+
+    'Bitte die Seite neu laden. Falls das nicht hilft: Die App muss mit ihrem kompletten Ordner '+
+    '(inkl. <code>data/</code>) ausgeliefert bzw. geöffnet werden.</p></div>';
+  throw new Error('Datendateien fehlen (window.TREES/window.METHODS nicht gesetzt).');
+}
 
 /* ============================================================
    Engine
